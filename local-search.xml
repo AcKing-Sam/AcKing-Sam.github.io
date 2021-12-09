@@ -4,6 +4,31 @@
   
   
   <entry>
+    <title>VIM手册</title>
+    <link href="/VIM/vim-tutorials/"/>
+    <url>/VIM/vim-tutorials/</url>
+    
+    <content type="html"><![CDATA[<h2 id="NORMAL"><a href="#NORMAL" class="headerlink" title="NORMAL"></a>NORMAL</h2><h3 id="光标移动"><a href="#光标移动" class="headerlink" title="光标移动"></a>光标移动</h3><p><code>h</code>←</p><p><code>j</code>↓</p><p><code>k</code>↑</p><p><code>l</code>→</p><p><code>w</code>跳到下一个单词开头</p><p><code>e</code>跳到本单词或下一个单词结尾</p><p><code>b</code>跳到本单词或上一个单词开头</p><p><code>ge</code>跳到上一个单词结尾</p><p><code>0</code>跳到行首</p><p><code>^</code>跳到从行首开始第一个非空字符</p><p><code>$</code>跳到行尾</p><p><code>g</code>跳到第一行</p><p><code>G</code>跳到最后一行</p><p><code>f&#123;char&#125;</code>跳到下一个指定字符位置</p><p><code>F&#123;char&#125;</code>跳到上一个指定字符位置</p><p><code>t&#123;char&#125;</code>跳到下一个指定字符的后一个位置</p><p><code>T&#123;char&#125;</code>跳到上一个指定字符的后一个位置</p><p><code>;</code>重复上一次查找</p><p><code>,</code>反向查找上次查找动作</p><h3 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h3><p><code>iw</code> / <code>aw</code>选中单词</p><p>i( / a( / ib / ab</p><p>i{ / a{ / iB / aB</p><p>i” / a”</p><p>i’ / a’</p><p>i` / a</p><p>i&lt; / a&lt;</p><p>i[ / a[</p><p>it / at 标签</p><p>is / as 句子</p><p>ip / ap 段落操作符</p><p>可视模式可以帮助快速选中</p><p><code>d</code>(delete) 删除 dd 删除一行</p><p><code>c</code>(change) 修改(删除并进入插入模式)</p><p><code>y</code>(yank) 复制 yy复制一行</p><p><code>v</code>(visual) 选中并进入可视模式</p><p><code>p</code> 粘贴</p><p><code>u</code> 撤销动作+操作符</p><p><code>ciw</code> 选中单词删除并进入插入模式</p><p><code>yiw</code> 选中并复制单词</p><p><code>diw</code> 选中并删除单词</p><p><code>ci&lt;</code> 选中被&lt;&gt;包围的单词并修改</p><p><code>ndd/cc/yy</code> 向下删除/修改/复制n行,包括当前行</p><p><code>d/c/yf&#123;char&#125;</code> 删除/修改/复制到向后的char字符</p><p><code>d/c/y^/$</code> 删除/修改/复制到开头/结尾切换大小写</p><p><code>~</code> 将光标下的字母改变大小写</p><p><code>3~</code> 将光标位置开始的3个字母改变大小写</p><p><code>g~</code> 改变当前行字母的大小写</p><p><code>gUU</code> 将当前行的字母改成大写</p><p><code>guu</code> 将当前行的字母改成小写</p><p><code>gUaw(gUiw)</code> 将光标下的单词改成大写</p><p><code>guaw(guiw)</code> 将光标下的单词改成小写</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>VIM</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>工具</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>cs144 lab0</title>
     <link href="/cs144/cs144-lab0/"/>
     <url>/cs144/cs144-lab0/</url>

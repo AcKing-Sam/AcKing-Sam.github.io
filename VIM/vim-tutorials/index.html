@@ -16,20 +16,38 @@
   <meta name="description" content="做一个脚踏实地的理想主义者">
   <meta name="author" content="Sam Shen">
   <meta name="keywords" content="">
-  <meta name="description" content="做一个脚踏实地的理想主义者">
-<meta property="og:type" content="website">
-<meta property="og:title" content="AcKing">
-<meta property="og:url" content="https://acking-sam.github.io/index.html">
+  <meta name="description" content="NORMAL光标移动h← j↓ k↑ l→ w跳到下一个单词开头 e跳到本单词或下一个单词结尾 b跳到本单词或上一个单词开头 ge跳到上一个单词结尾 0跳到行首 ^跳到从行首开始第一个非空字符 $跳到行尾 g跳到第一行 G跳到最后一行 f&amp;#123;char&amp;#125;跳到下一个指定字符位置 F&amp;#123;char&amp;#125;跳到上一个指定字符位置 t&amp;#123;char&amp;#125;跳到下一个指定">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VIM手册">
+<meta property="og:url" content="https://acking-sam.github.io/VIM/vim-tutorials/index.html">
 <meta property="og:site_name" content="AcKing">
-<meta property="og:description" content="做一个脚踏实地的理想主义者">
+<meta property="og:description" content="NORMAL光标移动h← j↓ k↑ l→ w跳到下一个单词开头 e跳到本单词或下一个单词结尾 b跳到本单词或上一个单词开头 ge跳到上一个单词结尾 0跳到行首 ^跳到从行首开始第一个非空字符 $跳到行尾 g跳到第一行 G跳到最后一行 f&amp;#123;char&amp;#125;跳到下一个指定字符位置 F&amp;#123;char&amp;#125;跳到上一个指定字符位置 t&amp;#123;char&amp;#125;跳到下一个指定">
 <meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-12-09T14:35:00.000Z">
+<meta property="article:modified_time" content="2021-12-09T15:36:49.047Z">
 <meta property="article:author" content="Sam Shen">
+<meta property="article:tag" content="工具">
 <meta name="twitter:card" content="summary_large_image">
   
-  <title>AcKing</title>
+  <title>VIM手册 - AcKing</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
 
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+  
 
 
 <!-- 主题依赖的图标库，不要自行修改 -->
@@ -56,7 +74,7 @@
 
 
 <body>
-  <header style="height: 100vh;">
+  <header style="height: 70vh;">
     <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
@@ -157,17 +175,47 @@
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
           <div class="page-header text-center fade-in-up">
-            <span class="h2" id="subtitle" title="绝知此事要躬行">
+            <span class="h2" id="subtitle" title="VIM手册">
               
             </span>
 
             
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-12-09 22:35" pubdate>
+        2021年12月9日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      697 字
+    </span>
+  
+
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      2 分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
           </div>
 
-          
-            <div class="scroll-down-bar">
-              <i class="iconfont icon-arrowdown"></i>
-            </div>
           
         </div>
       </div>
@@ -176,194 +224,139 @@
 
   <main>
     
-      <div class="container nopadding-x-md">
-        <div class="py-5" id="board"
-          style=margin-top:0>
-          
-          <div class="container">
-            <div class="row">
-              <div class="col-12 col-md-10 m-auto">
-                
+      
 
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">VIM手册</h1>
+            
+            <div class="markdown-body">
+              <h2 id="NORMAL"><a href="#NORMAL" class="headerlink" title="NORMAL"></a>NORMAL</h2><h3 id="光标移动"><a href="#光标移动" class="headerlink" title="光标移动"></a>光标移动</h3><p><code>h</code>←</p>
+<p><code>j</code>↓</p>
+<p><code>k</code>↑</p>
+<p><code>l</code>→</p>
+<p><code>w</code>跳到下一个单词开头</p>
+<p><code>e</code>跳到本单词或下一个单词结尾</p>
+<p><code>b</code>跳到本单词或上一个单词开头</p>
+<p><code>ge</code>跳到上一个单词结尾</p>
+<p><code>0</code>跳到行首</p>
+<p><code>^</code>跳到从行首开始第一个非空字符</p>
+<p><code>$</code>跳到行尾</p>
+<p><code>g</code>跳到第一行</p>
+<p><code>G</code>跳到最后一行</p>
+<p><code>f&#123;char&#125;</code>跳到下一个指定字符位置</p>
+<p><code>F&#123;char&#125;</code>跳到上一个指定字符位置</p>
+<p><code>t&#123;char&#125;</code>跳到下一个指定字符的后一个位置</p>
+<p><code>T&#123;char&#125;</code>跳到上一个指定字符的后一个位置</p>
+<p><code>;</code>重复上一次查找</p>
+<p><code>,</code>反向查找上次查找动作</p>
+<h3 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h3><p><code>iw</code> / <code>aw</code>选中单词</p>
+<p>i( / a( / ib / ab</p>
+<p>i{ / a{ / iB / aB</p>
+<p>i” / a”</p>
+<p>i’ / a’</p>
+<p>i` / a</p>
+<p>i&lt; / a&lt;</p>
+<p>i[ / a[</p>
+<p>it / at 标签</p>
+<p>is / as 句子</p>
+<p>ip / ap 段落操作符</p>
+<p>可视模式可以帮助快速选中</p>
+<p><code>d</code>(delete) 删除 dd 删除一行</p>
+<p><code>c</code>(change) 修改(删除并进入插入模式)</p>
+<p><code>y</code>(yank) 复制 yy复制一行</p>
+<p><code>v</code>(visual) 选中并进入可视模式</p>
+<p><code>p</code> 粘贴</p>
+<p><code>u</code> 撤销动作+操作符</p>
+<p><code>ciw</code> 选中单词删除并进入插入模式</p>
+<p><code>yiw</code> 选中并复制单词</p>
+<p><code>diw</code> 选中并删除单词</p>
+<p><code>ci&lt;</code> 选中被&lt;&gt;包围的单词并修改</p>
+<p><code>ndd/cc/yy</code> 向下删除/修改/复制n行,包括当前行</p>
+<p><code>d/c/yf&#123;char&#125;</code> 删除/修改/复制到向后的char字符</p>
+<p><code>d/c/y^/$</code> 删除/修改/复制到开头/结尾切换大小写</p>
+<p><code>~</code> 将光标下的字母改变大小写</p>
+<p><code>3~</code> 将光标位置开始的3个字母改变大小写</p>
+<p><code>g~</code> 改变当前行字母的大小写</p>
+<p><code>gUU</code> 将当前行的字母改成大写</p>
+<p><code>guu</code> 将当前行的字母改成小写</p>
+<p><code>gUaw(gUiw)</code> 将光标下的单词改成大写</p>
+<p><code>guaw(guiw)</code> 将光标下的单词改成小写</p>
 
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/VIM/vim-tutorials/" target="_self">
-          VIM手册
-        </a>
-      </h1>
-
-      <p class="index-excerpt">
-        <a href="/VIM/vim-tutorials/" target="_self">
-          
-          
-            
-          
-          NORMAL光标移动h←
-j↓
-k↑
-l→
-w跳到下一个单词开头
-e跳到本单词或下一个单词结尾
-b跳到本单词或上一个单词开头
-ge跳到上一个单词结尾
-0跳到行首
-^跳到从行首开始第一个非空字符
-$跳到行尾
-g跳到第一行
-G跳到最后一行
-f&#123;char&#125;跳到下一个指定字符位置
-F&#123;char&#125;跳到上一个指定字符位置
-t&#123;char&#125;跳到下一个指定
-        </a>
-      </p>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-12-09 22:35" pubdate>
-              2021-12-09
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-category"></i>
-            
-              <a href="/categories/VIM/">VIM</a>
-            
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E5%B7%A5%E5%85%B7/">工具</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/cs144/cs144-lab0/" target="_self">
-          cs144 lab0
-        </a>
-      </h1>
-
-      <p class="index-excerpt">
-        <a href="/cs144/cs144-lab0/" target="_self">
-          
-          
-            
-          
-          2 Networking by hand2.1 Fetch a Web page2.1.1 In a Web browser, visit http://cs144.keithw.org/hello and observe the result.
-2.1.2 Now, you’ll do the same thing the browser does, by hand.(a)
-(b)
-(c) as
-        </a>
-      </p>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-12-08 16:01" pubdate>
-              2021-12-08
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-category"></i>
-            
-              <a href="/categories/cs144/">cs144</a>
-            
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/cs144/">cs144</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h1 class="index-header">
-        
-        <a href="/%E6%84%9F%E6%82%9F/milestone/" target="_self">
-          基石
-        </a>
-      </h1>
-
-      <p class="index-excerpt">
-        <a href="/%E6%84%9F%E6%82%9F/milestone/" target="_self">
-          
-          
-            
-          
-          朱元璋盖士人读书，第一要有志，第二要有识，第三要有恒。有志则不甘为下流；有识则知学问无尽，不敢以一得自足，如河伯之观海，如井蛙之窥天，皆无识者也；有恒则断无不成之事。此三者缺一不可。
-《游褒禅山记》 王安石“……古人之观于天地、山川、草木、虫鱼、鸟兽，往往有得，以其求思之深而无不在也。夫夷以近，则游者众；险以远，则至者少。而世之奇伟、瑰怪，非常之观，常在于险远，而人之所罕至焉，故非有志者不能至也。
-        </a>
-      </p>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-12-04 02:46" pubdate>
-              2021-12-04
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-category"></i>
-            
-              <a href="/categories/%E6%84%9F%E6%82%9F/">感悟</a>
-            
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E7%94%9F%E6%B4%BB/">生活</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-
-
-
-
-              </div>
             </div>
-          </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/VIM/">VIM</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/%E5%B7%A5%E5%85%B7/">工具</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/cs144/cs144-lab0/">
+                        <span class="hidden-mobile">cs144 lab0</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
         </div>
       </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
     
 
     
@@ -446,6 +439,19 @@ t&#123;char&#125;跳到下一个指定
   
 
 
+
+  
+    <script  src="https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js" ></script>
+  
+  
+    <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js" ></script>
+  
 
 
 
