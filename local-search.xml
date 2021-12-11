@@ -5,22 +5,22 @@
   
   <entry>
     <title>Git手册</title>
-    <link href="/tools/git-tutorials/"/>
-    <url>/tools/git-tutorials/</url>
+    <link href="/Git/git-tutorials/"/>
+    <url>/Git/git-tutorials/</url>
     
     <content type="html"><![CDATA[<h2 id="git基本概念"><a href="#git基本概念" class="headerlink" title="git基本概念"></a>git基本概念</h2><p>工作区：仓库的目录。工作区是独立于各个分支的<br>暂存区：数据暂时存放的区域，类似于工作区写入版本库前的缓存区。暂存区是独立于各个分支的<br>版本库：存放所有已经提交到本地仓库的代码版本<br>版本结构：树结构，树中每个节点代表一个代码版本</p><h2 id="git常用命令"><a href="#git常用命令" class="headerlink" title="git常用命令"></a>git常用命令</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs bash">git config --global user.name xxx：设置全局用户名，信息记录在~/.gitconfig文件中<br>git config --global user.email xxx@xxx.com：设置全局邮箱地址，信息记录在~/.gitconfig文件中<br>git init：将当前目录配置成git仓库，信息记录在隐藏的.git文件夹中<br>git add XX：将XX文件添加到暂存区<br>git add .：将所有待加入暂存区的文件加入暂存区<br>git rm --cached XX：将文件从仓库索引目录中删掉<br>git commit -m <span class="hljs-string">&quot;给自己看的备注信息&quot;</span>：将暂存区的内容提交到当前分支<br>git status：查看仓库状态<br>git diff XX：查看XX文件相对于暂存区修改了哪些内容<br>git <span class="hljs-built_in">log</span>：查看当前分支的所有版本<br>git reflog：查看HEAD指针的移动历史（包括被回滚的版本）<br>git reset --hard HEAD^ 或 git reset --hard HEAD~：将代码库回滚到上一个版本<br>git reset --hard HEAD^^：往上回滚两次，以此类推<br>git reset --hard HEAD~100：往上回滚100个版本<br>git reset --hard 版本号：回滚到某一特定版本<br>git checkout — XX或git restore XX：将XX文件尚未加入暂存区的修改全部撤销<br>git remote add origin git@git.acwing.com:xxx/XXX.git：将本地仓库关联到远程仓库<br>git push -u (第一次需要-u以后不需要)：将当前分支推送到远程仓库<br>git push origin branch_name：将本地的某个分支推送到远程仓库<br>git <span class="hljs-built_in">clone</span> git@git.acwing.com:xxx/XXX.git：将远程仓库XXX下载到当前目录下<br>git checkout -b branch_name：创建并切换到branch_name这个分支<br>git branch：查看所有分支和当前所处分支<br>git checkout branch_name：切换到branch_name这个分支<br>git merge branch_name：将分支branch_name合并到当前分支上<br>git branch -d branch_name：删除本地仓库的branch_name分支<br>git branch branch_name：创建新分支<br>git push --set-upstream origin branch_name：设置本地的branch_name分支对应远程仓库的branch_name分支<br>git push -d origin branch_name：删除远程仓库的branch_name分支<br>git pull：将远程仓库的当前分支与本地仓库的当前分支合并<br>git pull origin branch_name：将远程仓库的branch_name分支与本地仓库的当前分支合并<br>git branch --set-upstream-to=origin/branch_name1 branch_name2：将远程的branch_name1分支与本地的branch_name2分支对应<br>git checkout -t origin/branch_name 将远程的branch_name分支拉取到本地<br>git stash：将工作区和暂存区中尚未提交的修改存入栈中<br>git stash apply：将栈顶存储的修改恢复到当前分支，但不删除栈顶元素<br>git stash drop：删除栈顶存储的修改<br>git stash pop：将栈顶存储的修改恢复到当前分支，同时删除栈顶元素<br>git stash list：查看栈中所有元素<br></code></pre></td></tr></table></figure>]]></content>
     
     
     <categories>
       
-      <category>tools</category>
+      <category>Git</category>
       
     </categories>
     
     
     <tags>
       
-      <tag>Git</tag>
+      <tag>tools</tag>
       
     </tags>
     
