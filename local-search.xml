@@ -4,6 +4,31 @@
   
   
   <entry>
+    <title>Git手册</title>
+    <link href="/tools/git-tutorials/"/>
+    <url>/tools/git-tutorials/</url>
+    
+    <content type="html"><![CDATA[<h2 id="git基本概念"><a href="#git基本概念" class="headerlink" title="git基本概念"></a>git基本概念</h2><p>工作区：仓库的目录。工作区是独立于各个分支的<br>暂存区：数据暂时存放的区域，类似于工作区写入版本库前的缓存区。暂存区是独立于各个分支的<br>版本库：存放所有已经提交到本地仓库的代码版本<br>版本结构：树结构，树中每个节点代表一个代码版本</p><h2 id="git常用命令"><a href="#git常用命令" class="headerlink" title="git常用命令"></a>git常用命令</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs bash">git config --global user.name xxx：设置全局用户名，信息记录在~/.gitconfig文件中<br>git config --global user.email xxx@xxx.com：设置全局邮箱地址，信息记录在~/.gitconfig文件中<br>git init：将当前目录配置成git仓库，信息记录在隐藏的.git文件夹中<br>git add XX：将XX文件添加到暂存区<br>git add .：将所有待加入暂存区的文件加入暂存区<br>git rm --cached XX：将文件从仓库索引目录中删掉<br>git commit -m <span class="hljs-string">&quot;给自己看的备注信息&quot;</span>：将暂存区的内容提交到当前分支<br>git status：查看仓库状态<br>git diff XX：查看XX文件相对于暂存区修改了哪些内容<br>git <span class="hljs-built_in">log</span>：查看当前分支的所有版本<br>git reflog：查看HEAD指针的移动历史（包括被回滚的版本）<br>git reset --hard HEAD^ 或 git reset --hard HEAD~：将代码库回滚到上一个版本<br>git reset --hard HEAD^^：往上回滚两次，以此类推<br>git reset --hard HEAD~100：往上回滚100个版本<br>git reset --hard 版本号：回滚到某一特定版本<br>git checkout — XX或git restore XX：将XX文件尚未加入暂存区的修改全部撤销<br>git remote add origin git@git.acwing.com:xxx/XXX.git：将本地仓库关联到远程仓库<br>git push -u (第一次需要-u以后不需要)：将当前分支推送到远程仓库<br>git push origin branch_name：将本地的某个分支推送到远程仓库<br>git <span class="hljs-built_in">clone</span> git@git.acwing.com:xxx/XXX.git：将远程仓库XXX下载到当前目录下<br>git checkout -b branch_name：创建并切换到branch_name这个分支<br>git branch：查看所有分支和当前所处分支<br>git checkout branch_name：切换到branch_name这个分支<br>git merge branch_name：将分支branch_name合并到当前分支上<br>git branch -d branch_name：删除本地仓库的branch_name分支<br>git branch branch_name：创建新分支<br>git push --set-upstream origin branch_name：设置本地的branch_name分支对应远程仓库的branch_name分支<br>git push -d origin branch_name：删除远程仓库的branch_name分支<br>git pull：将远程仓库的当前分支与本地仓库的当前分支合并<br>git pull origin branch_name：将远程仓库的branch_name分支与本地仓库的当前分支合并<br>git branch --set-upstream-to=origin/branch_name1 branch_name2：将远程的branch_name1分支与本地的branch_name2分支对应<br>git checkout -t origin/branch_name 将远程的branch_name分支拉取到本地<br>git stash：将工作区和暂存区中尚未提交的修改存入栈中<br>git stash apply：将栈顶存储的修改恢复到当前分支，但不删除栈顶元素<br>git stash drop：删除栈顶存储的修改<br>git stash pop：将栈顶存储的修改恢复到当前分支，同时删除栈顶元素<br>git stash list：查看栈中所有元素<br></code></pre></td></tr></table></figure>]]></content>
+    
+    
+    <categories>
+      
+      <category>tools</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Git</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>VIM手册</title>
     <link href="/VIM/vim-tutorials/"/>
     <url>/VIM/vim-tutorials/</url>
@@ -71,6 +96,33 @@
     <tags>
       
       <tag>生活</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>mit6.s081 环境配置</title>
+    <link href="/mit6-s081/mit6.s081-lab-tools/"/>
+    <url>/mit6-s081/mit6.s081-lab-tools/</url>
+    
+    <content type="html"><![CDATA[<h1 id="环境配置"><a href="#环境配置" class="headerlink" title="环境配置"></a>环境配置</h1><p>经过一天的摸索，6.s081的环境终于配置好了，哈哈，分享一下如何配置6.s081的环境。</p><h3 id="本人的硬件、软件"><a href="#本人的硬件、软件" class="headerlink" title="本人的硬件、软件"></a>本人的硬件、软件</h3><p>vmware 16 </p><p>ubuntu 20.04</p><p>2cpu 2cores 8GB ram</p><h3 id="第一步"><a href="#第一步" class="headerlink" title="第一步"></a>第一步</h3><p>需要成功安装ubuntu20.04，这里需要注意一点，网络配置选桥接网络。</p><h3 id="第二步"><a href="#第二步" class="headerlink" title="第二步"></a>第二步</h3><p>换源，将源换成<a href="https://blog.csdn.net/xiangxianghehe/article/details/105688062">中科大源</a></p><p>具体方法是把原先的<code>sources.list</code>的内容全部删掉，之后按照上面链接操作。</p><h3 id="第三步"><a href="#第三步" class="headerlink" title="第三步"></a>第三步</h3><p><a href="https://www.jianshu.com/p/e90a2b2e8dbd">安装vim</a> </p><h3 id="第四步"><a href="#第四步" class="headerlink" title="第四步"></a>第四步</h3><p><a href="https://blog.csdn.net/shacheyoumen/article/details/113244366">安装git</a></p><p>直接跑下面代码就行，三行解决</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">sudo apt-get update<br>sudo apt-get upgrade<br>sudo apt-get install git<br></code></pre></td></tr></table></figure><p><code>git --version</code>看一下，至少是2.34.1</p><p>之后，将虚拟机的git链接到自己的github</p><h3 id="第五步"><a href="#第五步" class="headerlink" title="第五步"></a>第五步</h3><p><a href="https://www.cnblogs.com/yongy1030/p/11699086.html">配置git代理</a></p><h5 id="ip是本机的ip"><a href="#ip是本机的ip" class="headerlink" title="ip是本机的ip"></a><code>ip</code>是本机的<code>ip</code></h5><p>win的话，用<code>ipconfig</code>看，连的无线，用wlan的ipv4地址，有线的话，用以太网的ipv4地址</p><h5 id="port是本机的代理软件的监听本地的端口号"><a href="#port是本机的代理软件的监听本地的端口号" class="headerlink" title="port是本机的代理软件的监听本地的端口号"></a><code>port</code>是本机的代理软件的监听本地的端口号</h5><p>不同软件不同，win的话， 设置 -》网络和Internet -》代理，看监听的是哪个端口号</p><p>代理软件需要开启__允许局域网走流量__</p><h3 id="第六步"><a href="#第六步" class="headerlink" title="第六步"></a>第六步</h3><p><strong>这步开始，我都按照知乎链接跑的</strong>:<a href="https://zhuanlan.zhihu.com/p/331492444">知乎</a></p><p>具体如下：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs bash">git <span class="hljs-built_in">clone</span> --recursive https://github.com/riscv/riscv-gnu-toolchain<br><br>sudo apt update &amp;&amp; apt upgrade -y<br><br>sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev -y<br><br><span class="hljs-built_in">cd</span> riscv-gnu-toolchain<br>./configure --prefix=/usr/<span class="hljs-built_in">local</span><br>sudo make -j4<br><br>sudo apt-get remove qemu-system-misc -y<br>sudo apt-get install qemu-system-misc=1:4.2-3ubuntu6 -y<br><br>git <span class="hljs-built_in">clone</span> git://g.csail.mit.edu/xv6-labs-2020<br><span class="hljs-built_in">cd</span> xv6-labs-2020<br>git checkout util<br><br>make qemu<br><br><br>评分系统需要跑python代码<br>sudo ln -s /usr/bin/python3.8 /usr/bin/python<br></code></pre></td></tr></table></figure>]]></content>
+    
+    
+    <categories>
+      
+      <category>mit6.s081</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>环境配置</tag>
+      
+      <tag>mit</tag>
       
     </tags>
     

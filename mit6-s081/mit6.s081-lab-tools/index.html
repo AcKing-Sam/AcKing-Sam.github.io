@@ -16,20 +16,21 @@
   <meta name="description" content="做一个脚踏实地的理想主义者">
   <meta name="author" content="Sam Shen">
   <meta name="keywords" content="">
-  <meta name="description" content="NORMAL光标移动h← j↓ k↑ l→ w跳到下一个单词开头 e跳到本单词或下一个单词结尾 b跳到本单词或上一个单词开头 ge跳到上一个单词结尾 0跳到行首 ^跳到从行首开始第一个非空字符 $跳到行尾 g跳到第一行 G跳到最后一行 f&amp;#123;char&amp;#125;跳到下一个指定字符位置 F&amp;#123;char&amp;#125;跳到上一个指定字符位置 t&amp;#123;char&amp;#125;跳到下一个指定">
+  <meta name="description" content="环境配置经过一天的摸索，6.s081的环境终于配置好了，哈哈，分享一下如何配置6.s081的环境。 本人的硬件、软件vmware 16  ubuntu 20.04 2cpu 2cores 8GB ram 第一步需要成功安装ubuntu20.04，这里需要注意一点，网络配置选桥接网络。 第二步换源，将源换成中科大源 具体方法是把原先的sources.list的内容全部删掉，之后按照上面链接操作。 第">
 <meta property="og:type" content="article">
-<meta property="og:title" content="VIM手册">
-<meta property="og:url" content="https://acking-sam.github.io/VIM/vim-tutorials/index.html">
+<meta property="og:title" content="mit6.s081 环境配置">
+<meta property="og:url" content="https://acking-sam.github.io/mit6-s081/mit6.s081-lab-tools/index.html">
 <meta property="og:site_name" content="AcKing">
-<meta property="og:description" content="NORMAL光标移动h← j↓ k↑ l→ w跳到下一个单词开头 e跳到本单词或下一个单词结尾 b跳到本单词或上一个单词开头 ge跳到上一个单词结尾 0跳到行首 ^跳到从行首开始第一个非空字符 $跳到行尾 g跳到第一行 G跳到最后一行 f&amp;#123;char&amp;#125;跳到下一个指定字符位置 F&amp;#123;char&amp;#125;跳到上一个指定字符位置 t&amp;#123;char&amp;#125;跳到下一个指定">
+<meta property="og:description" content="环境配置经过一天的摸索，6.s081的环境终于配置好了，哈哈，分享一下如何配置6.s081的环境。 本人的硬件、软件vmware 16  ubuntu 20.04 2cpu 2cores 8GB ram 第一步需要成功安装ubuntu20.04，这里需要注意一点，网络配置选桥接网络。 第二步换源，将源换成中科大源 具体方法是把原先的sources.list的内容全部删掉，之后按照上面链接操作。 第">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2021-12-09T14:35:00.000Z">
-<meta property="article:modified_time" content="2021-12-09T15:41:06.468Z">
+<meta property="article:published_time" content="2013-07-13T12:46:25.000Z">
+<meta property="article:modified_time" content="2021-12-11T12:26:51.903Z">
 <meta property="article:author" content="Sam Shen">
-<meta property="article:tag" content="tools">
+<meta property="article:tag" content="环境配置">
+<meta property="article:tag" content="mit">
 <meta name="twitter:card" content="summary_large_image">
   
-  <title>VIM手册 - AcKing</title>
+  <title>mit6.s081 环境配置 - AcKing</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
 
@@ -175,7 +176,7 @@
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
           <div class="page-header text-center fade-in-up">
-            <span class="h2" id="subtitle" title="VIM手册">
+            <span class="h2" id="subtitle" title="mit6.s081 环境配置">
               
             </span>
 
@@ -185,8 +186,8 @@
   
     <span class="post-meta">
       <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-      <time datetime="2021-12-09 22:35" pubdate>
-        2021年12月9日 晚上
+      <time datetime="2013-07-13 20:46" pubdate>
+        2013年7月13日 晚上
       </time>
     </span>
   
@@ -196,7 +197,7 @@
   
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      697 字
+      1.1k 字
     </span>
   
 
@@ -205,7 +206,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      2 分钟
+      3 分钟
     </span>
   
 
@@ -234,60 +235,33 @@
         <div class="py-5" id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">VIM手册</h1>
+            <h1 style="display: none">mit6.s081 环境配置</h1>
             
             <div class="markdown-body">
-              <h2 id="NORMAL"><a href="#NORMAL" class="headerlink" title="NORMAL"></a>NORMAL</h2><h3 id="光标移动"><a href="#光标移动" class="headerlink" title="光标移动"></a>光标移动</h3><p><code>h</code>←</p>
-<p><code>j</code>↓</p>
-<p><code>k</code>↑</p>
-<p><code>l</code>→</p>
-<p><code>w</code>跳到下一个单词开头</p>
-<p><code>e</code>跳到本单词或下一个单词结尾</p>
-<p><code>b</code>跳到本单词或上一个单词开头</p>
-<p><code>ge</code>跳到上一个单词结尾</p>
-<p><code>0</code>跳到行首</p>
-<p><code>^</code>跳到从行首开始第一个非空字符</p>
-<p><code>$</code>跳到行尾</p>
-<p><code>g</code>跳到第一行</p>
-<p><code>G</code>跳到最后一行</p>
-<p><code>f&#123;char&#125;</code>跳到下一个指定字符位置</p>
-<p><code>F&#123;char&#125;</code>跳到上一个指定字符位置</p>
-<p><code>t&#123;char&#125;</code>跳到下一个指定字符的后一个位置</p>
-<p><code>T&#123;char&#125;</code>跳到上一个指定字符的后一个位置</p>
-<p><code>;</code>重复上一次查找</p>
-<p><code>,</code>反向查找上次查找动作</p>
-<h3 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h3><p><code>iw</code> / <code>aw</code>选中单词</p>
-<p>i( / a( / ib / ab</p>
-<p>i{ / a{ / iB / aB</p>
-<p>i” / a”</p>
-<p>i’ / a’</p>
-<p>i` / a</p>
-<p>i&lt; / a&lt;</p>
-<p>i[ / a[</p>
-<p>it / at 标签</p>
-<p>is / as 句子</p>
-<p>ip / ap 段落操作符</p>
-<p>可视模式可以帮助快速选中</p>
-<p><code>d</code>(delete) 删除 dd 删除一行</p>
-<p><code>c</code>(change) 修改(删除并进入插入模式)</p>
-<p><code>y</code>(yank) 复制 yy复制一行</p>
-<p><code>v</code>(visual) 选中并进入可视模式</p>
-<p><code>p</code> 粘贴</p>
-<p><code>u</code> 撤销动作+操作符</p>
-<p><code>ciw</code> 选中单词删除并进入插入模式</p>
-<p><code>yiw</code> 选中并复制单词</p>
-<p><code>diw</code> 选中并删除单词</p>
-<p><code>ci&lt;</code> 选中被&lt;&gt;包围的单词并修改</p>
-<p><code>ndd/cc/yy</code> 向下删除/修改/复制n行,包括当前行</p>
-<p><code>d/c/yf&#123;char&#125;</code> 删除/修改/复制到向后的char字符</p>
-<p><code>d/c/y^/$</code> 删除/修改/复制到开头/结尾切换大小写</p>
-<p><code>~</code> 将光标下的字母改变大小写</p>
-<p><code>3~</code> 将光标位置开始的3个字母改变大小写</p>
-<p><code>g~</code> 改变当前行字母的大小写</p>
-<p><code>gUU</code> 将当前行的字母改成大写</p>
-<p><code>guu</code> 将当前行的字母改成小写</p>
-<p><code>gUaw(gUiw)</code> 将光标下的单词改成大写</p>
-<p><code>guaw(guiw)</code> 将光标下的单词改成小写</p>
+              <h1 id="环境配置"><a href="#环境配置" class="headerlink" title="环境配置"></a>环境配置</h1><p>经过一天的摸索，6.s081的环境终于配置好了，哈哈，分享一下如何配置6.s081的环境。</p>
+<h3 id="本人的硬件、软件"><a href="#本人的硬件、软件" class="headerlink" title="本人的硬件、软件"></a>本人的硬件、软件</h3><p>vmware 16 </p>
+<p>ubuntu 20.04</p>
+<p>2cpu 2cores 8GB ram</p>
+<h3 id="第一步"><a href="#第一步" class="headerlink" title="第一步"></a>第一步</h3><p>需要成功安装ubuntu20.04，这里需要注意一点，网络配置选桥接网络。</p>
+<h3 id="第二步"><a href="#第二步" class="headerlink" title="第二步"></a>第二步</h3><p>换源，将源换成<a target="_blank" rel="noopener" href="https://blog.csdn.net/xiangxianghehe/article/details/105688062">中科大源</a></p>
+<p>具体方法是把原先的<code>sources.list</code>的内容全部删掉，之后按照上面链接操作。</p>
+<h3 id="第三步"><a href="#第三步" class="headerlink" title="第三步"></a>第三步</h3><p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/e90a2b2e8dbd">安装vim</a> </p>
+<h3 id="第四步"><a href="#第四步" class="headerlink" title="第四步"></a>第四步</h3><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/shacheyoumen/article/details/113244366">安装git</a></p>
+<p>直接跑下面代码就行，三行解决</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">sudo apt-get update<br>sudo apt-get upgrade<br>sudo apt-get install git<br></code></pre></td></tr></table></figure>
+
+<p><code>git --version</code>看一下，至少是2.34.1</p>
+<p>之后，将虚拟机的git链接到自己的github</p>
+<h3 id="第五步"><a href="#第五步" class="headerlink" title="第五步"></a>第五步</h3><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/yongy1030/p/11699086.html">配置git代理</a></p>
+<h5 id="ip是本机的ip"><a href="#ip是本机的ip" class="headerlink" title="ip是本机的ip"></a><code>ip</code>是本机的<code>ip</code></h5><p>win的话，用<code>ipconfig</code>看，连的无线，用wlan的ipv4地址，有线的话，用以太网的ipv4地址</p>
+<h5 id="port是本机的代理软件的监听本地的端口号"><a href="#port是本机的代理软件的监听本地的端口号" class="headerlink" title="port是本机的代理软件的监听本地的端口号"></a><code>port</code>是本机的代理软件的监听本地的端口号</h5><p>不同软件不同，win的话， 设置 -》网络和Internet -》代理，看监听的是哪个端口号</p>
+<p>代理软件需要开启__允许局域网走流量__</p>
+<h3 id="第六步"><a href="#第六步" class="headerlink" title="第六步"></a>第六步</h3><p><strong>这步开始，我都按照知乎链接跑的</strong>:<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/331492444">知乎</a></p>
+<p>具体如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs bash">git <span class="hljs-built_in">clone</span> --recursive https://github.com/riscv/riscv-gnu-toolchain<br><br>sudo apt update &amp;&amp; apt upgrade -y<br><br>sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev -y<br><br><span class="hljs-built_in">cd</span> riscv-gnu-toolchain<br>./configure --prefix=/usr/<span class="hljs-built_in">local</span><br>sudo make -j4<br><br>sudo apt-get remove qemu-system-misc -y<br>sudo apt-get install qemu-system-misc=1:4.2-3ubuntu6 -y<br><br>git <span class="hljs-built_in">clone</span> git://g.csail.mit.edu/xv6-labs-2020<br><span class="hljs-built_in">cd</span> xv6-labs-2020<br>git checkout util<br><br>make qemu<br><br><br>评分系统需要跑python代码<br>sudo ln -s /usr/bin/python3.8 /usr/bin/python<br></code></pre></td></tr></table></figure>
+
+
+
 
             </div>
             <hr>
@@ -297,7 +271,7 @@
                   <div class="post-meta mr-3">
                     <i class="iconfont icon-category"></i>
                     
-                      <a class="hover-with-bg" href="/categories/VIM/">VIM</a>
+                      <a class="hover-with-bg" href="/categories/mit6-s081/">mit6.s081</a>
                     
                   </div>
                 
@@ -305,7 +279,9 @@
                   <div class="post-meta">
                     <i class="iconfont icon-tags"></i>
                     
-                      <a class="hover-with-bg" href="/tags/tools/">tools</a>
+                      <a class="hover-with-bg" href="/tags/%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/">环境配置</a>
+                    
+                      <a class="hover-with-bg" href="/tags/mit/">mit</a>
                     
                   </div>
                 
@@ -322,21 +298,15 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/tools/git-tutorials/">
+                      <a href="/%E6%84%9F%E6%82%9F/milestone/">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Git手册</span>
+                        <span class="hidden-mobile">基石</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
                   </article>
                   <article class="post-next col-6">
                     
-                    
-                      <a href="/CS144/cs144-lab0/">
-                        <span class="hidden-mobile">CS144 lab0</span>
-                        <span class="visible-mobile">下一篇</span>
-                        <i class="iconfont icon-arrowright"></i>
-                      </a>
                     
                   </article>
                 </div>
