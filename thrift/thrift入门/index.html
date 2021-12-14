@@ -1,0 +1,537 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="做一个脚踏实地的理想主义者">
+  <meta name="author" content="Sam Shen">
+  <meta name="keywords" content="">
+  <meta name="description" content="准备工作创建项目文件夹thrift_project业务逻辑图  游戏节点，创建game文件夹；  匹配系统节点，创建match_system文件夹；  thrift相关文件,创建thrift文件夹   thrift语法使用Thrift开发程序，首先要做的事情就是对接口进行描述， 然后再使用Thrift将接口的描述文件编译成对应语言的版本。 1.命名空间thrift文件命名一般都是以.thrift作">
+<meta property="og:type" content="article">
+<meta property="og:title" content="thrift入门">
+<meta property="og:url" content="https://acking-sam.github.io/thrift/thrift%E5%85%A5%E9%97%A8/index.html">
+<meta property="og:site_name" content="AcKing">
+<meta property="og:description" content="准备工作创建项目文件夹thrift_project业务逻辑图  游戏节点，创建game文件夹；  匹配系统节点，创建match_system文件夹；  thrift相关文件,创建thrift文件夹   thrift语法使用Thrift开发程序，首先要做的事情就是对接口进行描述， 然后再使用Thrift将接口的描述文件编译成对应语言的版本。 1.命名空间thrift文件命名一般都是以.thrift作">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://acking-sam.github.io/images/20210930104820.png">
+<meta property="article:published_time" content="2021-12-14T14:31:25.000Z">
+<meta property="article:modified_time" content="2021-12-14T14:33:47.586Z">
+<meta property="article:author" content="Sam Shen">
+<meta property="article:tag" content="thrift">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://acking-sam.github.io/images/20210930104820.png">
+  
+  <title>thrift入门 - AcKing</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.css" />
+  
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"acking-sam.github.io","root":"/","version":"1.8.12","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname"}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AcKing之路</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/img/bg/back.jpg') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="thrift入门">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-12-14 22:31" pubdate>
+        2021年12月14日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      11k 字
+    </span>
+  
+
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      35 分钟
+    </span>
+  
+
+  
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">thrift入门</h1>
+            
+            <div class="markdown-body">
+              <h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><h4 id="创建项目文件夹thrift-project"><a href="#创建项目文件夹thrift-project" class="headerlink" title="创建项目文件夹thrift_project"></a>创建项目文件夹thrift_project</h4><h4 id="业务逻辑图"><a href="#业务逻辑图" class="headerlink" title="业务逻辑图"></a>业务逻辑图</h4><p><img src="/images/20210930104820.png" srcset="/img/loading.gif" lazyload alt="img"></p>
+<ul>
+<li><p>游戏节点，创建game文件夹；</p>
+</li>
+<li><p>匹配系统节点，创建match_system文件夹；</p>
+</li>
+<li><p>thrift相关文件,创建thrift文件夹</p>
+</li>
+</ul>
+<h2 id="thrift语法"><a href="#thrift语法" class="headerlink" title="thrift语法"></a>thrift语法</h2><p><strong>使用Thrift开发程序，首先要做的事情就是对接口进行描述， 然后再使用Thrift将接口的描述文件编译成对应语言的版本。</strong></p>
+<h4 id="1-命名空间"><a href="#1-命名空间" class="headerlink" title="1.命名空间"></a>1.命名空间</h4><p>thrift文件命名一般都是以<code>.thrift</code>作为后缀：<code>XXX.thrift</code>。</p>
+<p>可以在该文件的开头为该文件加上命名空间限制，格式为：<code>namespace 语言名称 名称</code><br>例如对c++来说，有：<code>namespace cpp match_service</code></p>
+<h4 id="2-数据类型"><a href="#2-数据类型" class="headerlink" title="2.数据类型"></a>2.数据类型</h4><p>它共支持以下几种基本的数据类型：</p>
+<p>string，字符串类型，注意是全部小写形式；<br>i16, 16位整形类型，<br>i32，32位整形类型，对应C/C++/java中的int类型；<br>i64，64位整形，对应C/C++/java中的long类型；<br>byte，8位的字符类型，对应C/C++中的char，java中的byte类型<br>bool, 布尔类型，对应C/C++中的bool，java中的boolean类型；<br>double，双精度浮点类型，对应C/C++/java中的double类型；<br>void，空类型，对应C/C++/java中的void类型；该类型主要用作函数的返回值，</p>
+<p>struct，自定义结构体类型，在IDL中可以自己定义结构体，对应C中的struct，c++中的struct和class，java中的class。例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">User</span>&#123;</span><br>      <span class="hljs-number">1</span>: i32 id,<br>      <span class="hljs-number">2</span>: <span class="hljs-built_in">string</span> name,<br>      <span class="hljs-number">3</span>: i32 score<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+<p><strong>注意，在struct定义结构体时需要对每个结构体成员用序号标识：“序号: ”</strong></p>
+<h4 id="3-函数接口"><a href="#3-函数接口" class="headerlink" title="3.函数接口"></a>3.函数接口</h4><p>文件中对所有接口函数的描述都放在service中，service的名字可以自己指定，该名字也将被用作生成的特定语言接口文件的名字。</p>
+<p>接口函数需要对参数使用序号标号，除最后一个接口函数外，要以,结束对函数的描述。</p>
+<p>例子：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-keyword">namespace</span> cpp match_service<br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">User</span> &#123;</span><br>    <span class="hljs-number">1</span>: i32 id,<br>    <span class="hljs-number">2</span>: <span class="hljs-built_in">string</span> name,<br>    <span class="hljs-number">3</span>: i32 score<br>&#125;<br>service Match &#123;<br><br>    <span class="hljs-function">i32 <span class="hljs-title">add_user</span><span class="hljs-params">(<span class="hljs-number">1</span>: User user, <span class="hljs-number">2</span>: <span class="hljs-built_in">string</span> info)</span>,</span><br><span class="hljs-function"></span><br><span class="hljs-function">    i32 <span class="hljs-title">remove_user</span><span class="hljs-params">(<span class="hljs-number">1</span>: User user, <span class="hljs-number">2</span>: <span class="hljs-built_in">string</span> info)</span>,</span><br><span class="hljs-function">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>到此，接口描述完毕。</p>
+<h2 id="服务端的建立"><a href="#服务端的建立" class="headerlink" title="服务端的建立"></a>服务端的建立</h2><p>对于匹配系统的thrift相关配置，我们在thrift文件夹下，创建match.thrift文件</p>
+<p>打开<a target="_blank" rel="noopener" href="https://thrift.apache.org/">thrift官网</a>，在上方选择Tutorial项，查看thrift官方教程</p>
+<p>点击下方的tutorial.thrift进入一个示例文件</p>
+<p>变写thrift配置文件，只需要在文件中写明接口和对象.然后执行命令</p>
+<p><code>thrift -r --gen &lt;语言名&gt; &lt;.thrift文件的路径&gt;</code><br>就会生成各种配置和连接文件，还有代码框架，只需要在框架中实现自己的业务即可</p>
+<h4 id="具体步骤"><a href="#具体步骤" class="headerlink" title="具体步骤"></a>具体步骤</h4><h5 id="1-在thrift文件夹下，编辑match-thrift文件，用来生成匹配系统服务端的一系列文件"><a href="#1-在thrift文件夹下，编辑match-thrift文件，用来生成匹配系统服务端的一系列文件" class="headerlink" title="1.在thrift文件夹下，编辑match.thrift文件，用来生成匹配系统服务端的一系列文件"></a>1.在<code>thrift</code>文件夹下，编辑<code>match.thrift</code>文件，用来生成匹配系统服务端的一系列文件</h5><p>match.thrift 文件内容如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-keyword">namespace</span> cpp match_service<br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">User</span> &#123;</span><br>    <span class="hljs-number">1</span>: i32 id,<br>    <span class="hljs-number">2</span>: <span class="hljs-built_in">string</span> name,<br>    <span class="hljs-number">3</span>: i32 score<br>&#125;<br>service Match &#123;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * user: 添加的用户信息</span><br><span class="hljs-comment">     * info: 附加信息</span><br><span class="hljs-comment">     * 在匹配池中添加一个名用户</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-function">i32 <span class="hljs-title">add_user</span><span class="hljs-params">(<span class="hljs-number">1</span>: User user, <span class="hljs-number">2</span>: <span class="hljs-built_in">string</span> info)</span>,</span><br><span class="hljs-function"></span><br><span class="hljs-function">    <span class="hljs-comment">/**</span></span><br><span class="hljs-comment"><span class="hljs-function">     * user: 删除的用户信息</span></span><br><span class="hljs-comment"><span class="hljs-function">     * info: 附加信息</span></span><br><span class="hljs-comment"><span class="hljs-function">     * 从匹配池中删除一名用户</span></span><br><span class="hljs-comment"><span class="hljs-function">     */</span></span><br><span class="hljs-function">    i32 <span class="hljs-title">remove_user</span><span class="hljs-params">(<span class="hljs-number">1</span>: User user, <span class="hljs-number">2</span>: <span class="hljs-built_in">string</span> info)</span>,</span><br><span class="hljs-function">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<h5 id="2-进入到match-system文件夹，创建src文件夹。在src下执行语句："><a href="#2-进入到match-system文件夹，创建src文件夹。在src下执行语句：" class="headerlink" title="2.进入到match_system文件夹，创建src文件夹。在src下执行语句："></a>2.进入到<code>match_system</code>文件夹，创建src文件夹。在src下执行语句：</h5><p><code>thrift -r --gen cpp ../../thrift/match.thrift</code></p>
+<p>这样，thrift服务端的一系列文件就会生成在src文件夹中的<code>gen-cpp</code>文件夹下，为了划分业务模块将<code>gen-cpp</code>重命名为<code>match_server</code></p>
+<p>文件结构如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">.<br>`-- match_server<br>    |-- Match.cpp<br>    |-- Match.h<br>    |-- Match_server.skeleton.cpp<br>    |-- match_types.cpp<br>    `-- match_types.h<br></code></pre></td></tr></table></figure>
+
+<p>其中 <code>Match_server.skeleton.cpp </code>是服务端的代码框架，具体业务就是在这个文件中编写实现</p>
+<p>将<code>Match_server.skeleton.cpp</code>移动到<code>match_system/src</code>下并重命名为<code>main.cpp</code>，<code>match_system</code>的整个业务逻辑就是在这个文件中实现。</p>
+<h5 id="3-初始main-cpp的改动"><a href="#3-初始main-cpp的改动" class="headerlink" title="3.初始main.cpp的改动"></a>3.初始<code>main.cpp</code>的改动</h5><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&quot;match_server/Match.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;thrift/protocol/TBinaryProtocol.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;thrift/server/TSimpleServer.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;thrift/transport/TServerSocket.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;thrift/transport/TBufferTransports.h&gt;</span></span><br><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::apache::thrift;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::apache::thrift::protocol;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::apache::thrift::transport;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::apache::thrift::server;<br><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span>  ::match_service;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MatchHandler</span> :</span> <span class="hljs-keyword">virtual</span> <span class="hljs-keyword">public</span> MatchIf &#123;<br> <span class="hljs-keyword">public</span>:<br>  <span class="hljs-built_in">MatchHandler</span>() &#123;<br>    <span class="hljs-comment">// Your initialization goes here</span><br>  &#125;<br><br>  <span class="hljs-function"><span class="hljs-keyword">int32_t</span> <span class="hljs-title">add_user</span><span class="hljs-params">(<span class="hljs-keyword">const</span> User&amp; user, <span class="hljs-keyword">const</span> std::string&amp; info)</span> </span>&#123;<br>    <span class="hljs-comment">// Your implementation goes here</span><br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;add_user\n&quot;</span>);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>  &#125;<br><br>  <span class="hljs-function"><span class="hljs-keyword">int32_t</span> <span class="hljs-title">remove_user</span><span class="hljs-params">(<span class="hljs-keyword">const</span> User&amp; user, <span class="hljs-keyword">const</span> std::string&amp; info)</span> </span>&#123;<br>    <span class="hljs-comment">// Your implementation goes here</span><br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;remove_user\n&quot;</span>);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>  &#125;<br><br>&#125;;<br><br><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">int</span> argc, <span class="hljs-keyword">char</span> **argv)</span> </span>&#123;<br>  <span class="hljs-keyword">int</span> port = <span class="hljs-number">9090</span>;<br>  ::<span class="hljs-function">std::shared_ptr&lt;MatchHandler&gt; <span class="hljs-title">handler</span><span class="hljs-params">(<span class="hljs-keyword">new</span> MatchHandler())</span></span>;<br>  ::<span class="hljs-function">std::shared_ptr&lt;TProcessor&gt; <span class="hljs-title">processor</span><span class="hljs-params">(<span class="hljs-keyword">new</span> MatchProcessor(handler))</span></span>;<br>  ::<span class="hljs-function">std::shared_ptr&lt;TServerTransport&gt; <span class="hljs-title">serverTransport</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TServerSocket(port))</span></span>;<br>  ::<span class="hljs-function">std::shared_ptr&lt;TTransportFactory&gt; <span class="hljs-title">transportFactory</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TBufferedTransportFactory())</span></span>;<br>  ::<span class="hljs-function">std::shared_ptr&lt;TProtocolFactory&gt; <span class="hljs-title">protocolFactory</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TBinaryProtocolFactory())</span></span>;<br><br>  <span class="hljs-function">TSimpleServer <span class="hljs-title">server</span><span class="hljs-params">(processor, serverTransport, transportFactory, protocolFactory)</span></span>;<br>  server.<span class="hljs-built_in">serve</span>();<br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>修改了头文件的位置，以及在<code>add_user</code>和<code>remove_user</code>中添加返回值。</p>
+<h4 id="c-文件的编译、链接、运行"><a href="#c-文件的编译、链接、运行" class="headerlink" title="c++文件的编译、链接、运行"></a>c++文件的编译、链接、运行</h4><h4 id="提交git"><a href="#提交git" class="headerlink" title="提交git"></a>提交git</h4><h3 id="客户端的实现"><a href="#客户端的实现" class="headerlink" title="客户端的实现"></a>客户端的实现</h3><h4 id="具体步骤-1"><a href="#具体步骤-1" class="headerlink" title="具体步骤"></a>具体步骤</h4><h5 id="1-在game下创建src-在src下执行："><a href="#1-在game下创建src-在src下执行：" class="headerlink" title="1.在game下创建src,在src下执行："></a>1.在<code>game</code>下创建<code>src</code>,在<code>src</code>下执行：</h5><p><code>thrift -r --gen py ../../thrift/match.thrift</code></p>
+<p>这样，thrift服务端的一系列文件就会生成在src文件夹中的<code>gen-py</code>文件夹下，为了划分业务模块将<code>gen-py</code>重命名为<code>match_client</code></p>
+<p>文件结构如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">.<br>|-- __init__.py<br>`-- match<br>    |-- Match-remote<br>    |-- Match.py<br>    |-- __init__.py<br>    |-- constants.py<br>    `-- ttypes.py<br></code></pre></td></tr></table></figure>
+
+<p>因为我们只需要实现客户端，不需要服务端，所以可以把<code>Match-remote</code>删除</p>
+<h5 id="2-在src下创建文件client-py，将-Apache-Thrift-Python-，页面中，client中的代码复制到该文件中，并将代码进行适当的改动和删除，client-py中的初始代码如下："><a href="#2-在src下创建文件client-py，将-Apache-Thrift-Python-，页面中，client中的代码复制到该文件中，并将代码进行适当的改动和删除，client-py中的初始代码如下：" class="headerlink" title="2.在src下创建文件client.py，将 Apache Thrift - Python ，页面中，client中的代码复制到该文件中，并将代码进行适当的改动和删除，client.py中的初始代码如下："></a>2.在src下创建文件<code>client.py</code>，将<code> Apache Thrift - Python</code> ，页面中，client中的代码复制到该文件中，并将代码进行适当的改动和删除，<code>client.py</code>中的初始代码如下：</h5><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> match_client.match <span class="hljs-keyword">import</span> Match<br><span class="hljs-keyword">from</span> match_client.match.ttypes <span class="hljs-keyword">import</span> User<br><br><span class="hljs-keyword">from</span> thrift <span class="hljs-keyword">import</span> Thrift<br><span class="hljs-keyword">from</span> thrift.transport <span class="hljs-keyword">import</span> TSocket<br><span class="hljs-keyword">from</span> thrift.transport <span class="hljs-keyword">import</span> TTransport<br><span class="hljs-keyword">from</span> thrift.protocol <span class="hljs-keyword">import</span> TBinaryProtocol<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">main</span>():</span><br>    <span class="hljs-comment"># Make socket</span><br>    transport = TSocket.TSocket(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">9090</span>)<br><br>    <span class="hljs-comment"># Buffering is critical. Raw sockets are very slow</span><br>    transport = TTransport.TBufferedTransport(transport)<br><br>    <span class="hljs-comment"># Wrap in a protocol</span><br>    protocol = TBinaryProtocol.TBinaryProtocol(transport)<br><br>    <span class="hljs-comment"># Create a client to use the protocol encoder</span><br>    client = Match.Client(protocol)<br><br>    <span class="hljs-comment"># Connect!</span><br>    transport.<span class="hljs-built_in">open</span>()<br><br>    user = User(<span class="hljs-number">1</span>,<span class="hljs-string">&quot;sqf&quot;</span>,<span class="hljs-number">50000</span>)<br>    client.add_user(user,<span class="hljs-string">&quot;&quot;</span>)<br><br>    <span class="hljs-comment"># Close!</span><br>    transport.close()<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    main()<br></code></pre></td></tr></table></figure>
+
+<h5 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h5><ul>
+<li>先在<code>thrift_project/match_system/src</code>下，执行./main,`使服务端运行</li>
+<li>再在<code>thrift_project/game/src</code>下，执行：<code>python3 client.py</code>,使客户端运行</li>
+<li>观察服务端运行处有无相应输出，若有，说明成功运行</li>
+<li>成功的话，提交到git</li>
+</ul>
+<p><code>client.py</code>简单实现</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> match_client.match <span class="hljs-keyword">import</span> Match<br><span class="hljs-keyword">from</span> match_client.match.ttypes <span class="hljs-keyword">import</span> User<br><br><span class="hljs-keyword">from</span> thrift <span class="hljs-keyword">import</span> Thrift<br><span class="hljs-keyword">from</span> thrift.transport <span class="hljs-keyword">import</span> TSocket<br><span class="hljs-keyword">from</span> thrift.transport <span class="hljs-keyword">import</span> TTransport<br><span class="hljs-keyword">from</span> thrift.protocol <span class="hljs-keyword">import</span> TBinaryProtocol<br><span class="hljs-keyword">from</span> sys <span class="hljs-keyword">import</span> stdin<br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">operate</span>(<span class="hljs-params">op: <span class="hljs-built_in">str</span>, user_id: <span class="hljs-built_in">int</span>, username: <span class="hljs-built_in">str</span>, score: <span class="hljs-built_in">int</span></span>):</span><br>    <span class="hljs-comment"># Make socket</span><br>    transport = TSocket.TSocket(<span class="hljs-string">&#x27;localhost&#x27;</span>, <span class="hljs-number">9090</span>)<br><br>    <span class="hljs-comment"># Buffering is critical. Raw sockets are very slow</span><br>    transport = TTransport.TBufferedTransport(transport)<br><br>    <span class="hljs-comment"># Wrap in a protocol</span><br>    protocol = TBinaryProtocol.TBinaryProtocol(transport)<br><br>    <span class="hljs-comment"># Create a client to use the protocol encoder</span><br>    client = Match.Client(protocol)<br><br>    <span class="hljs-comment"># Connect!</span><br>    transport.<span class="hljs-built_in">open</span>()<br><br>    user = User(user_id, username, score)<br><br>    <span class="hljs-keyword">if</span> op == <span class="hljs-string">&quot;add&quot;</span>:<br>        client.add_user(user, <span class="hljs-string">&quot;&quot;</span>)<br>    <span class="hljs-keyword">elif</span> op == <span class="hljs-string">&quot;remove&quot;</span>:<br>        client.remove_user(user, <span class="hljs-string">&quot;&quot;</span>)<br><br>    <span class="hljs-comment"># Close!</span><br>    transport.close()<br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">main</span>():</span><br>    <span class="hljs-keyword">for</span> line <span class="hljs-keyword">in</span> stdin:<br>        op, user_id, username, score = line.split(<span class="hljs-string">&quot; &quot;</span>)<br>        operate(op, <span class="hljs-built_in">int</span>(user_id), username, <span class="hljs-built_in">int</span>(score))<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    main()<br></code></pre></td></tr></table></figure>
+
+<p>提交git</p>
+<h3 id="服务端匹配的具体实现"><a href="#服务端匹配的具体实现" class="headerlink" title="服务端匹配的具体实现"></a>服务端匹配的具体实现</h3><p>需要多线程编程<br>学习各种语言多线程，需要关注的要点：</p>
+<ul>
+<li>用哪些头文件</li>
+<li>如何创建一个线程(创建线程要用哪些函数)</li>
+<li>如何使用锁(相关的函数)</li>
+<li>如何使用条件变量</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/kaleidopink/p/13817039.html">C++多线程编程</a></p>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u011808673/article/details/80811998">C++多线程编程</a></p>
+<p><code>main.cpp</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&quot;match_server/Match.h&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;thrift/protocol/TBinaryProtocol.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;thrift/server/TSimpleServer.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;thrift/transport/TServerSocket.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;thrift/transport/TBufferTransports.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&quot;mutex&quot;</span>  <span class="hljs-comment">//锁的头文件</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&quot;thread&quot;</span>  <span class="hljs-comment">//线程的头文件</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&quot;condition_variable&quot;</span>  <span class="hljs-comment">//条件变量的头文件</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&quot;queue&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-meta-keyword">include</span> <span class="hljs-meta-string">&quot;vector&quot;</span></span><br><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::apache::thrift;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::apache::thrift::protocol;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::apache::thrift::transport;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::apache::thrift::server;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> ::match_service;<br><br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">Task</span> &#123;</span><br>    User user;<br>    string type;<br>&#125;;<br><br><span class="hljs-class"><span class="hljs-keyword">struct</span> <span class="hljs-title">MessageQueue</span> &#123;</span><br>    <span class="hljs-comment">//队列是互斥的，同时只能有一个线程访问队列</span><br>    queue&lt;Task&gt; q;<br>    mutex m;<br>    condition_variable cv;<br>&#125; message_queue;<br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Poll</span> &#123;</span><br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">add</span><span class="hljs-params">(User user)</span> </span>&#123;<br>        users.<span class="hljs-built_in">push_back</span>(user);<br>    &#125;<br><br>    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">remove</span><span class="hljs-params">(User user)</span> </span>&#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">uint32_t</span> i = <span class="hljs-number">0</span>; i &lt; users.<span class="hljs-built_in">size</span>(); i++) &#123;<br>            <span class="hljs-keyword">if</span> (users[i].id == user.id) &#123;<br>                users.<span class="hljs-built_in">erase</span>(users.<span class="hljs-built_in">begin</span>() + i);<br>                <span class="hljs-keyword">break</span>;<br>            &#125;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">match</span><span class="hljs-params">()</span> </span>&#123;<br>        <span class="hljs-keyword">while</span> (users.<span class="hljs-built_in">size</span>() &gt; <span class="hljs-number">1</span>) &#123;<br><span class="hljs-comment">//            printf(&quot;队列长度为: %ld\n&quot;, users.size());</span><br>            <span class="hljs-keyword">auto</span> player1 = users[<span class="hljs-number">0</span>];<br>            <span class="hljs-keyword">auto</span> player2 = users[<span class="hljs-number">1</span>];<br>            users.<span class="hljs-built_in">erase</span>(users.<span class="hljs-built_in">begin</span>());<br>            users.<span class="hljs-built_in">erase</span>(users.<span class="hljs-built_in">begin</span>());<br><br>            <span class="hljs-built_in">save_result</span>(player1.id, player2.id);<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">save_result</span><span class="hljs-params">(<span class="hljs-keyword">int</span> a, <span class="hljs-keyword">int</span> b)</span> </span>&#123;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot; %d 和 %d 匹配成功\n&quot;</span>, a, b);<br>    &#125;<br><br><span class="hljs-keyword">private</span>:<br>    vector&lt;User&gt; users;<br>&#125; pool;<br><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MatchHandler</span> :</span> <span class="hljs-keyword">virtual</span> <span class="hljs-keyword">public</span> MatchIf &#123;<br><span class="hljs-keyword">public</span>:<br>    <span class="hljs-built_in">MatchHandler</span>() &#123;<br>        <span class="hljs-comment">// 在这里初始化</span><br>    &#125;<br><br>    <span class="hljs-function"><span class="hljs-keyword">int32_t</span> <span class="hljs-title">add_user</span><span class="hljs-params">(<span class="hljs-keyword">const</span> User &amp;user, <span class="hljs-keyword">const</span> std::string &amp;info)</span> </span>&#123;<br>        <span class="hljs-comment">// 在这里实现接口</span><br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;add_user\n&quot;</span>);<br><br><br>        <span class="hljs-function">unique_lock&lt;mutex&gt; <span class="hljs-title">lock1</span><span class="hljs-params">(message_queue.m)</span></span>;<span class="hljs-comment">//加锁</span><br>        message_queue.q.<span class="hljs-built_in">push</span>(&#123;user, <span class="hljs-string">&quot;add&quot;</span>&#125;);<br>        <span class="hljs-comment">//当有操作时，应该唤醒线程</span><br>        message_queue.cv.<span class="hljs-built_in">notify_all</span>();<br><br><br>        <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>    &#125;<br><br>    <span class="hljs-function"><span class="hljs-keyword">int32_t</span> <span class="hljs-title">remove_user</span><span class="hljs-params">(<span class="hljs-keyword">const</span> User &amp;user, <span class="hljs-keyword">const</span> std::string &amp;info)</span> </span>&#123;<br>        <span class="hljs-comment">// 在这里实现接口</span><br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;remove_user\n&quot;</span>);<br><br><br>        <span class="hljs-function">unique_lock&lt;mutex&gt; <span class="hljs-title">lock1</span><span class="hljs-params">(message_queue.m)</span></span>;<span class="hljs-comment">//加锁,在队列为空的时候，不能拿到锁</span><br>        message_queue.q.<span class="hljs-built_in">push</span>(&#123;user, <span class="hljs-string">&quot;remove&quot;</span>&#125;);<br>        <span class="hljs-comment">//当有操作时，应该唤醒线程</span><br>        message_queue.cv.<span class="hljs-built_in">notify_all</span>();<br><br>        <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>    &#125;<br><br>&#125;;<br><br><br><span class="hljs-comment">//线程操作的函数</span><br><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">consume_task</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>        <span class="hljs-function">unique_lock&lt;mutex&gt; <span class="hljs-title">lock1</span><span class="hljs-params">(message_queue.m)</span></span>;<span class="hljs-comment">//加锁</span><br>        <span class="hljs-keyword">if</span> (message_queue.q.<span class="hljs-built_in">empty</span>()) &#123;<br>            <span class="hljs-comment">//因为队列初始一定是空的，如果直接continue，会死循环。因此在初始时，应在有add操作后，才应该执行这里</span><br>            <span class="hljs-comment">//continue</span><br>            message_queue.cv.<span class="hljs-built_in">wait</span>(lock1);<br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            <span class="hljs-keyword">auto</span> task = message_queue.q.<span class="hljs-built_in">front</span>();<br>            message_queue.q.<span class="hljs-built_in">pop</span>();<br>            <span class="hljs-comment">//因为只有队列是互斥的，为了保证程序的快速运行，操作完队列就应该释放锁</span><br>            lock1.<span class="hljs-built_in">unlock</span>();<br>            <span class="hljs-comment">//具体任务</span><br>            <span class="hljs-keyword">if</span> (task.type == <span class="hljs-string">&quot;add&quot;</span>) &#123;<br>                pool.<span class="hljs-built_in">add</span>(task.user);<br><span class="hljs-comment">//                printf(&quot;执行了1次add&quot;);</span><br>            &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (task.type == <span class="hljs-string">&quot;remove&quot;</span>) &#123;<br>                pool.<span class="hljs-built_in">remove</span>(task.user);<br>            &#125;<br>            pool.<span class="hljs-built_in">match</span>();<br><br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-keyword">int</span> argc, <span class="hljs-keyword">char</span> **argv)</span> </span>&#123;<br>    <span class="hljs-keyword">int</span> port = <span class="hljs-number">9090</span>;<br>    ::<span class="hljs-function">std::shared_ptr&lt;MatchHandler&gt; <span class="hljs-title">handler</span><span class="hljs-params">(<span class="hljs-keyword">new</span> MatchHandler())</span></span>;<br>    ::<span class="hljs-function">std::shared_ptr&lt;TProcessor&gt; <span class="hljs-title">processor</span><span class="hljs-params">(<span class="hljs-keyword">new</span> MatchProcessor(handler))</span></span>;<br>    ::<span class="hljs-function">std::shared_ptr&lt;TServerTransport&gt; <span class="hljs-title">serverTransport</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TServerSocket(port))</span></span>;<br>    ::<span class="hljs-function">std::shared_ptr&lt;TTransportFactory&gt; <span class="hljs-title">transportFactory</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TBufferedTransportFactory())</span></span>;<br>    ::<span class="hljs-function">std::shared_ptr&lt;TProtocolFactory&gt; <span class="hljs-title">protocolFactory</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TBinaryProtocolFactory())</span></span>;<br>    <span class="hljs-function">TSimpleServer <span class="hljs-title">server</span><span class="hljs-params">(processor, serverTransport, transportFactory, protocolFactory)</span></span>;<br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Match server start\n&quot;</span>);<br><br>    <span class="hljs-function">thread <span class="hljs-title">matching_thread</span><span class="hljs-params">(consume_task)</span></span>;<br><br>    server.<span class="hljs-built_in">serve</span>();<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>注意链接的时候，加上<code>-pthread</code></p>
+<h3 id="数据存储的客户端"><a href="#数据存储的客户端" class="headerlink" title="数据存储的客户端"></a>数据存储的客户端</h3><h4 id="具体步骤-2"><a href="#具体步骤-2" class="headerlink" title="具体步骤"></a>具体步骤</h4><h5 id="1-在thrift文件夹下，编辑save-thrift，用来生成数据存储客户端的一系列文件"><a href="#1-在thrift文件夹下，编辑save-thrift，用来生成数据存储客户端的一系列文件" class="headerlink" title="1.在thrift文件夹下，编辑save.thrift，用来生成数据存储客户端的一系列文件"></a>1.在<code>thrift</code>文件夹下，编辑<code>save.thrift</code>，用来生成数据存储客户端的一系列文件</h5><p><code>save.thrift</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-keyword">namespace</span> cpp save_service<br><br>service Save &#123;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * username: myserver的名称</span><br><span class="hljs-comment">     * password: myserver的密码的md5sum的前8位</span><br><span class="hljs-comment">     * 用户名密码验证成功会返回0，验证失败会返回1</span><br><span class="hljs-comment">     * 验证成功后，结果会被保存到myserver:homework/lesson_6/result.txt中</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-function">i32 <span class="hljs-title">save_data</span><span class="hljs-params">(<span class="hljs-number">1</span>: <span class="hljs-built_in">string</span> username, <span class="hljs-number">2</span>: <span class="hljs-built_in">string</span> password, <span class="hljs-number">3</span>: i32 player1_id, <span class="hljs-number">4</span>: i32 player2_id)</span></span><br><span class="hljs-function">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<h5 id="2-在match-system-src下执行："><a href="#2-在match-system-src下执行：" class="headerlink" title="2.在match_system/src下执行："></a>2.在<code>match_system/src</code>下执行：</h5><p><code>thrift -r --gen cpp ../../thrift/save.thrift</code></p>
+<p>这样，thrift服务端的一系列文件就会生成在src文件夹中的<code>gen-cpp</code>文件夹下，为了划分业务模块将<code>gen-cpp</code>重命名为<code>save_client</code></p>
+<p>由于C++整个项目只能有一个main函数，而整个服务端的逻辑都在<code>thrift_project/match_system/src</code>下的<code>main.cpp</code>实现。所以一定要删除<code>thrift_project/match_system/src/save_client</code>下的<code>Save_server.skeleton.cpp</code>。而python没有这个问题，所以在用python实现客户端时，主框架文件可删可不删。</p>
+<h5 id="3-改动main-cpp将数据存储端的业务写进去"><a href="#3-改动main-cpp将数据存储端的业务写进去" class="headerlink" title="3.改动main.cpp将数据存储端的业务写进去"></a>3.改动main.cpp将数据存储端的业务写进去</h5><p>改动点：</p>
+<ul>
+<li>引入头文件，即<code>save_client/Save.h</code></li>
+<li>补全命名空间，即添加<code>using namespace ::save_service;</code></li>
+<li>在class Pool中的<code>save_resut</code>函数中，添加官网 C++样例的client中的main函数中的所有代码</li>
+<li>由于数据存储是实现在myserver上，所以在连接时要更改ip地址。 myserver的ip地址可以执行homework 4 getinfo查看</li>
+<li>将<code>CalculatorClient</code>改为<code>SaveClient</code></li>
+<li>将<code>transport-&gt;open()</code>和<code>transport-&gt;close();</code>之间的教程代码删除，在此之间实现自己的业务</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">save_result</span><span class="hljs-params">(<span class="hljs-keyword">int</span> a, <span class="hljs-keyword">int</span> b)</span> </span>&#123;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot; %d 和 %d 匹配成功\n&quot;</span>, a, b);<br><br>        <span class="hljs-function"><span class="hljs-built_in">std</span>::<span class="hljs-built_in">shared_ptr</span>&lt;TTransport&gt; <span class="hljs-title">socket</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TSocket(<span class="hljs-string">&quot;123.57.47.211&quot;</span>, <span class="hljs-number">9090</span>))</span></span>;<br>        <span class="hljs-function"><span class="hljs-built_in">std</span>::<span class="hljs-built_in">shared_ptr</span>&lt;TTransport&gt; <span class="hljs-title">transport</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TBufferedTransport(socket))</span></span>;<br>        <span class="hljs-function"><span class="hljs-built_in">std</span>::<span class="hljs-built_in">shared_ptr</span>&lt;TProtocol&gt; <span class="hljs-title">protocol</span><span class="hljs-params">(<span class="hljs-keyword">new</span> TBinaryProtocol(transport))</span></span>;<br>        <span class="hljs-function">CalculatorClient <span class="hljs-title">client</span><span class="hljs-params">(protocol)</span></span>;<br><br>        <span class="hljs-keyword">try</span> &#123;<br>            transport-&gt;open();<br>            <span class="hljs-comment">//----------在此之间实现自己的业务------------</span><br>            <span class="hljs-comment">//第二个参数是myserver密码的MD5值的前8位</span><br>            client.save_data(<span class="hljs-string">&quot;acs_xxx&quot;</span>,<span class="hljs-string">&quot;xxxxxxxx&quot;</span>,a,b);<br><br>            <span class="hljs-comment">//-----------------------------------------</span><br>            transport-&gt;close();<br>        &#125; <span class="hljs-keyword">catch</span> (TException &amp;tx) &#123;<br>            <span class="hljs-built_in">cout</span> &lt;&lt; <span class="hljs-string">&quot;ERROR: &quot;</span> &lt;&lt; tx.what() &lt;&lt; <span class="hljs-built_in">endl</span>;<br>        &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>编译运行即可。</p>
+<p>这里由于我的运行环境搭建在阿里云服务器上，无法连接<code>ac terminal</code>中的服务器，端口被屏蔽了，因此无法连接<code>save_server</code>，来验证是否将匹配信息存储好。</p>
+<p><a target="_blank" rel="noopener" href="https://www.acwing.com/solution/content/69937/">引用链接</a></p>
+<p><a target="_blank" rel="noopener" href="https://git.acwing.com/AcKing/thrift_lesson/-/tree/master/">git.acwing地址</a></p>
+
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/thrift/">thrift</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/thrift/">thrift</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/mit6-s081/mit6.s081-lab-tools/">
+                        <span class="hidden-mobile">mit6.s081 环境配置</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
+
+  
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  
+    <script  src="https://cdn.jsdelivr.net/npm/tocbot@4/dist/tocbot.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3/dist/jquery.fancybox.min.js" ></script>
+  
+  
+    <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4/anchor.min.js" ></script>
+  
+  
+    <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js" ></script>
+  
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+</body>
+</html>
