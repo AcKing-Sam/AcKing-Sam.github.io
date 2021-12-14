@@ -29,6 +29,33 @@
   
   
   <entry>
+    <title>Django_game01</title>
+    <link href="/Django/django__game01/"/>
+    <url>/Django/django__game01/</url>
+    
+    <content type="html"><![CDATA[<h1 id="django-game01"><a href="#django-game01" class="headerlink" title="django_game01"></a>django_game01</h1><p>跟随<a href="www.acwing.com">y总课程</a>做一个小项目，用django来做。</p><h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><p><code>scp /var/lib/acwing/docker/images/ django_lesson_1_0.tar server_name</code>   将镜像上传到自己租的云端服务器<br><code>ssh server_name</code>  登录自己的云端服务器<br><code>docker load -i django_lesson_1_0.tar</code>  将镜像加载到本地<br><code>docker run -p 20000:22 -p 8000:8000 --name django_server -itd django_lesson:1.0</code>  创建并运行django_lesson:1.0镜像 (端口要自己去云平台放行)<br><code>docker attach django_server</code>  进入创建的docker容器<br><code>passwd</code>  设置root密码<br><code>adduser acs</code>  创建普通用户acs<br><code>usermod -aG sudo acs</code>  给用户acs分配sudo权限<br><code>su acs</code> 可切换到用户acs中<br><code>ctrl p + ctrl q</code> 挂起容器</p><p>返回AC terminal，为acs用户配置别名和免密登录<br><code>vim config</code>  配置别名<br><code>ssh-copy-id 别名</code>  为acs用户一键添加公钥，免密登录<br><code>scp .bashrc .vimrc .tmux.conf 别名</code>  配置开发环境</p><h2 id="开始施工"><a href="#开始施工" class="headerlink" title="开始施工"></a>开始施工</h2><p><code>django-admin startproject acapp</code> 创建django项目acapp<br>配置git：<br><code>ssh-keygen</code> # 生成密钥用于连接到ac git上面<br>在git.acwing.com中，打开ssh密钥，添加一下刚才生成的公钥<br><code>git init</code> # 进到acapp中将其配置成git仓库<br>打开git，在git上创建一个仓库（项目）按照下面的提示在acs里面配置一下git<br><code>git config --global user.name xxx git config --global user.email xxx@xxx.com</code><br><code>git add .</code><br><code>git commit -m &quot;xxx&quot;</code><br><code>git remote add origin git@git.acwing.com:xxx/XXX.git</code> #建立连接<br><code>git push --set-upstream origin master</code></p><p>使用 <code>IP地址：8000 </code>打开django页面<br>git 一下</p><p>注意：在git仓库的根目录下（acapp）,<code>vim .gitignore</code><br>在文件里面写上 <code>**/__pycache__</code>(两个杠)<br>再去添加文件的时候就不会再添加这类不必要的文件</p><p><code>python3 manage.py startapp game</code> # 创建gameapp</p><p>登录django管理员界面<br><code>ctrl c</code> 先关掉控制台<br><code>python3 manage.py migrate</code> #同步一下数据库的修改<br><code>python3 manage.py createsuperuser</code> # 创建管理员账号<br><code>pyhton3 manage.py runserver 0.0.0.0:8000</code> # 启动控制台<br><code>IP地址：8000/admin</code> # 进到管理员登录界面，输入一下刚才创建的账号即可进到管理员界面<br><code>cd game</code><br><code>touch urls.py</code><br><code>mkdir templates</code><br><code>vim views</code> # 定义一个index函数 视频位置 1:00:00<br><code>vim urls.py</code> # 写一下路由<br><code>cd acapp</code></p><p><code> vim urls.py</code> # 将刚才的路由写到总路由里面</p><ul><li>models：存储各种数据结构（class等）</li><li>views：存储函数</li><li>urls：路由</li><li>templates：存储网页模板</li></ul><p>git一下</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>Django</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Django</tag>
+      
+      <tag>Python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>mit6.s081 环境配置</title>
     <link href="/mit6-s081/mit6.s081-lab-tools/"/>
     <url>/mit6-s081/mit6.s081-lab-tools/</url>

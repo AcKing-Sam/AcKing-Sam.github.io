@@ -16,21 +16,21 @@
   <meta name="description" content="做一个脚踏实地的理想主义者">
   <meta name="author" content="Sam Shen">
   <meta name="keywords" content="">
-  <meta name="description" content="环境配置经过一天的摸索，6.s081的环境终于配置好了，哈哈，分享一下如何配置6.s081的环境。 本人的硬件、软件vmware 16  ubuntu 20.04 2cpu 2cores 8GB ram 第一步需要成功安装ubuntu20.04，这里需要注意一点，网络配置选桥接网络。 第二步换源，将源换成中科大源 具体方法是把原先的sources.list的内容全部删掉，之后按照上面链接操作。 第">
+  <meta name="description" content="django_game01跟随y总课程做一个小项目，用django来做。 准备工作scp &#x2F;var&#x2F;lib&#x2F;acwing&#x2F;docker&#x2F;images&#x2F; django_lesson_1_0.tar server_name   将镜像上传到自己租的云端服务器ssh server_name  登录自己的云端服务器docker load -i django_lesson_1_0.tar  将镜像加载到本地">
 <meta property="og:type" content="article">
-<meta property="og:title" content="mit6.s081 环境配置">
-<meta property="og:url" content="https://acking-sam.github.io/mit6-s081/mit6.s081-lab-tools/index.html">
+<meta property="og:title" content="Django_game01">
+<meta property="og:url" content="https://acking-sam.github.io/Django/django__game01/index.html">
 <meta property="og:site_name" content="AcKing">
-<meta property="og:description" content="环境配置经过一天的摸索，6.s081的环境终于配置好了，哈哈，分享一下如何配置6.s081的环境。 本人的硬件、软件vmware 16  ubuntu 20.04 2cpu 2cores 8GB ram 第一步需要成功安装ubuntu20.04，这里需要注意一点，网络配置选桥接网络。 第二步换源，将源换成中科大源 具体方法是把原先的sources.list的内容全部删掉，之后按照上面链接操作。 第">
+<meta property="og:description" content="django_game01跟随y总课程做一个小项目，用django来做。 准备工作scp &#x2F;var&#x2F;lib&#x2F;acwing&#x2F;docker&#x2F;images&#x2F; django_lesson_1_0.tar server_name   将镜像上传到自己租的云端服务器ssh server_name  登录自己的云端服务器docker load -i django_lesson_1_0.tar  将镜像加载到本地">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2021-12-11T12:32:25.000Z">
-<meta property="article:modified_time" content="2021-12-11T12:32:49.321Z">
+<meta property="article:published_time" content="2021-12-14T14:30:25.000Z">
+<meta property="article:modified_time" content="2021-12-14T14:37:43.521Z">
 <meta property="article:author" content="Sam Shen">
-<meta property="article:tag" content="环境配置">
-<meta property="article:tag" content="mit">
+<meta property="article:tag" content="Django">
+<meta property="article:tag" content="Python">
 <meta name="twitter:card" content="summary_large_image">
   
-  <title>mit6.s081 环境配置 - AcKing</title>
+  <title>Django_game01 - AcKing</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4/dist/css/bootstrap.min.css" />
 
@@ -176,7 +176,7 @@
       <div class="full-bg-img">
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
           <div class="page-header text-center fade-in-up">
-            <span class="h2" id="subtitle" title="mit6.s081 环境配置">
+            <span class="h2" id="subtitle" title="Django_game01">
               
             </span>
 
@@ -186,8 +186,8 @@
   
     <span class="post-meta">
       <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-      <time datetime="2021-12-11 20:32" pubdate>
-        2021年12月11日 晚上
+      <time datetime="2021-12-14 22:30" pubdate>
+        2021年12月14日 晚上
       </time>
     </span>
   
@@ -197,7 +197,7 @@
   
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      1.1k 字
+      1.4k 字
     </span>
   
 
@@ -206,7 +206,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      3 分钟
+      4 分钟
     </span>
   
 
@@ -235,33 +235,25 @@
         <div class="py-5" id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">mit6.s081 环境配置</h1>
+            <h1 style="display: none">Django_game01</h1>
             
             <div class="markdown-body">
-              <h1 id="环境配置"><a href="#环境配置" class="headerlink" title="环境配置"></a>环境配置</h1><p>经过一天的摸索，6.s081的环境终于配置好了，哈哈，分享一下如何配置6.s081的环境。</p>
-<h3 id="本人的硬件、软件"><a href="#本人的硬件、软件" class="headerlink" title="本人的硬件、软件"></a>本人的硬件、软件</h3><p>vmware 16 </p>
-<p>ubuntu 20.04</p>
-<p>2cpu 2cores 8GB ram</p>
-<h3 id="第一步"><a href="#第一步" class="headerlink" title="第一步"></a>第一步</h3><p>需要成功安装ubuntu20.04，这里需要注意一点，网络配置选桥接网络。</p>
-<h3 id="第二步"><a href="#第二步" class="headerlink" title="第二步"></a>第二步</h3><p>换源，将源换成<a target="_blank" rel="noopener" href="https://blog.csdn.net/xiangxianghehe/article/details/105688062">中科大源</a></p>
-<p>具体方法是把原先的<code>sources.list</code>的内容全部删掉，之后按照上面链接操作。</p>
-<h3 id="第三步"><a href="#第三步" class="headerlink" title="第三步"></a>第三步</h3><p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/e90a2b2e8dbd">安装vim</a> </p>
-<h3 id="第四步"><a href="#第四步" class="headerlink" title="第四步"></a>第四步</h3><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/shacheyoumen/article/details/113244366">安装git</a></p>
-<p>直接跑下面代码就行，三行解决</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">sudo apt-get update<br>sudo apt-get upgrade<br>sudo apt-get install git<br></code></pre></td></tr></table></figure>
-
-<p><code>git --version</code>看一下，至少是2.34.1</p>
-<p>之后，将虚拟机的git链接到自己的github</p>
-<h3 id="第五步"><a href="#第五步" class="headerlink" title="第五步"></a>第五步</h3><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/yongy1030/p/11699086.html">配置git代理</a></p>
-<h5 id="ip是本机的ip"><a href="#ip是本机的ip" class="headerlink" title="ip是本机的ip"></a><code>ip</code>是本机的<code>ip</code></h5><p>win的话，用<code>ipconfig</code>看，连的无线，用wlan的ipv4地址，有线的话，用以太网的ipv4地址</p>
-<h5 id="port是本机的代理软件的监听本地的端口号"><a href="#port是本机的代理软件的监听本地的端口号" class="headerlink" title="port是本机的代理软件的监听本地的端口号"></a><code>port</code>是本机的代理软件的监听本地的端口号</h5><p>不同软件不同，win的话， 设置 -》网络和Internet -》代理，看监听的是哪个端口号</p>
-<p>代理软件需要开启__允许局域网走流量__</p>
-<h3 id="第六步"><a href="#第六步" class="headerlink" title="第六步"></a>第六步</h3><p><strong>这步开始，我都按照知乎链接跑的</strong>:<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/331492444">知乎</a></p>
-<p>具体如下：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs bash">git <span class="hljs-built_in">clone</span> --recursive https://github.com/riscv/riscv-gnu-toolchain<br><br>sudo apt update &amp;&amp; apt upgrade -y<br><br>sudo apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev -y<br><br><span class="hljs-built_in">cd</span> riscv-gnu-toolchain<br>./configure --prefix=/usr/<span class="hljs-built_in">local</span><br>sudo make -j4<br><br>sudo apt-get remove qemu-system-misc -y<br>sudo apt-get install qemu-system-misc=1:4.2-3ubuntu6 -y<br><br>git <span class="hljs-built_in">clone</span> git://g.csail.mit.edu/xv6-labs-2020<br><span class="hljs-built_in">cd</span> xv6-labs-2020<br>git checkout util<br><br>make qemu<br><br><br>评分系统需要跑python代码<br>sudo ln -s /usr/bin/python3.8 /usr/bin/python<br></code></pre></td></tr></table></figure>
-
-
-
+              <h1 id="django-game01"><a href="#django-game01" class="headerlink" title="django_game01"></a>django_game01</h1><p>跟随<a href="www.acwing.com">y总课程</a>做一个小项目，用django来做。</p>
+<h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><p><code>scp /var/lib/acwing/docker/images/ django_lesson_1_0.tar server_name</code>   将镜像上传到自己租的云端服务器<br><code>ssh server_name</code>  登录自己的云端服务器<br><code>docker load -i django_lesson_1_0.tar</code>  将镜像加载到本地<br><code>docker run -p 20000:22 -p 8000:8000 --name django_server -itd django_lesson:1.0</code>  创建并运行django_lesson:1.0镜像 (端口要自己去云平台放行)<br><code>docker attach django_server</code>  进入创建的docker容器<br><code>passwd</code>  设置root密码<br><code>adduser acs</code>  创建普通用户acs<br><code>usermod -aG sudo acs</code>  给用户acs分配sudo权限<br><code>su acs</code> 可切换到用户acs中<br><code>ctrl p + ctrl q</code> 挂起容器</p>
+<p>返回AC terminal，为acs用户配置别名和免密登录<br><code>vim config</code>  配置别名<br><code>ssh-copy-id 别名</code>  为acs用户一键添加公钥，免密登录<br><code>scp .bashrc .vimrc .tmux.conf 别名</code>  配置开发环境</p>
+<h2 id="开始施工"><a href="#开始施工" class="headerlink" title="开始施工"></a>开始施工</h2><p><code>django-admin startproject acapp</code> 创建django项目acapp<br>配置git：<br><code>ssh-keygen</code> # 生成密钥用于连接到ac git上面<br>在git.acwing.com中，打开ssh密钥，添加一下刚才生成的公钥<br><code>git init</code> # 进到acapp中将其配置成git仓库<br>打开git，在git上创建一个仓库（项目）按照下面的提示在acs里面配置一下git<br><code>git config --global user.name xxx git config --global user.email xxx@xxx.com</code><br><code>git add .</code><br><code>git commit -m &quot;xxx&quot;</code><br><code>git remote add origin git@git.acwing.com:xxx/XXX.git</code> #建立连接<br><code>git push --set-upstream origin master</code></p>
+<p>使用 <code>IP地址：8000 </code>打开django页面<br>git 一下</p>
+<p>注意：在git仓库的根目录下（acapp）,<code>vim .gitignore</code><br>在文件里面写上 <code>**/__pycache__</code>(两个杠)<br>再去添加文件的时候就不会再添加这类不必要的文件</p>
+<p><code>python3 manage.py startapp game</code> # 创建gameapp</p>
+<p>登录django管理员界面<br><code>ctrl c</code> 先关掉控制台<br><code>python3 manage.py migrate</code> #同步一下数据库的修改<br><code>python3 manage.py createsuperuser</code> # 创建管理员账号<br><code>pyhton3 manage.py runserver 0.0.0.0:8000</code> # 启动控制台<br><code>IP地址：8000/admin</code> # 进到管理员登录界面，输入一下刚才创建的账号即可进到管理员界面<br><code>cd game</code><br><code>touch urls.py</code><br><code>mkdir templates</code><br><code>vim views</code> # 定义一个index函数 视频位置 1:00:00<br><code>vim urls.py</code> # 写一下路由<br><code>cd acapp</code></p>
+<p><code> vim urls.py</code> # 将刚才的路由写到总路由里面</p>
+<ul>
+<li>models：存储各种数据结构（class等）</li>
+<li>views：存储函数</li>
+<li>urls：路由</li>
+<li>templates：存储网页模板</li>
+</ul>
+<p>git一下</p>
 
             </div>
             <hr>
@@ -271,7 +263,7 @@
                   <div class="post-meta mr-3">
                     <i class="iconfont icon-category"></i>
                     
-                      <a class="hover-with-bg" href="/categories/mit6-s081/">mit6.s081</a>
+                      <a class="hover-with-bg" href="/categories/Django/">Django</a>
                     
                   </div>
                 
@@ -279,9 +271,9 @@
                   <div class="post-meta">
                     <i class="iconfont icon-tags"></i>
                     
-                      <a class="hover-with-bg" href="/tags/%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/">环境配置</a>
+                      <a class="hover-with-bg" href="/tags/Django/">Django</a>
                     
-                      <a class="hover-with-bg" href="/tags/mit/">mit</a>
+                      <a class="hover-with-bg" href="/tags/Python/">Python</a>
                     
                   </div>
                 
@@ -298,9 +290,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/Django/django__game01/">
+                      <a href="/thrift/thrift%E5%85%A5%E9%97%A8/">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Django_game01</span>
+                        <span class="hidden-mobile">thrift入门</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -308,8 +300,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/Git/git-tutorials/">
-                        <span class="hidden-mobile">Git手册</span>
+                      <a href="/mit6-s081/mit6.s081-lab-tools/">
+                        <span class="hidden-mobile">mit6.s081 环境配置</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
