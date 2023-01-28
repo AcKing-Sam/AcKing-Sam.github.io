@@ -173,7 +173,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">[object Object]<i class="fa fa-external-link-alt"></i></a>
+            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch1<i class="fa fa-external-link-alt"></i></a>
           
         </h2>
 
@@ -185,7 +185,888 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-01-28 20:12:53 / Modified: 20:15:12" itemprop="dateCreated datePublished" datetime="2023-01-28T20:12:53+08:00">2023-01-28</time>
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:17:07" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081-os/" itemprop="url" rel="index"><span itemprop="name">mit6.s081 os</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Chapter-1"><a href="#Chapter-1" class="headerlink" title="Chapter 1"></a>Chapter 1</h1><h3 id="主要内容"><a href="#主要内容" class="headerlink" title="主要内容"></a>主要内容</h3><p>第一节课主要是介绍课程内容，考核方式，以及宏观讲述os的结构，实际内容主要讲解若干系统调用。</p>
+<p>由于系统调用是操作系统提供的服务的接口，所以系统调用长什么样，应用程序期望从系统调用得到什么返回，系统调用是怎么工作的，这些还是挺重要的。</p>
+<p>整个课程中，XV6 运行在一个 RISC-V 微处理器上，实验中我们会在 QEMU 模拟器上运行 XV6。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225010755776.png" alt="image-20220225010755776"></p>
+<h3 id="read"><a href="#read" class="headerlink" title="read()"></a>read()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>    </span></span><br><span class="line"><span class="function"><span class="type">ssize_t</span> <span class="title">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span></span>;  </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>第一个参数是文件描述符，指向一个之前打开的文件。Shell 会确保默认情况下，当一个程序启动时，文件描述符 0 连接到标准输入，文件描述符 1 连接到了标准输出。所以我可以通过这个程序看到控制台打印我的输入。当然，这里的程序会预期文件描述符已经被 Shell 打开并设置好。这里的 0，1 文件描述符是非常普遍的Unix 风格，许多的 Unix 系统都会从文件描述符 0 读取数据，然后向文件描述符 1 写入数据。</p>
+</li>
+<li><p>第二个参数是指向某段内存的指针，程序可以通过指针对应的地址读取内存中的数据。在代码第 10 行，程序在栈里面申请了 64 字节的内存，并将指针保存在 buf 中，这样 read 可以将数据保存在这64字节中。</p>
+</li>
+<li><p>read 的第三个参数是代码想读取的最大长度，<code>sizeof(buf)</code> 表示，最多读取 64 字节的数据，所以这里的read 最多只能从连接到文件描述符 0 的设备，也就是标准输入中，读取 64 字节的数据。</p>
+</li>
+</ul>
+<p>返回值情况：</p>
+<ul>
+<li><p>read的返回值可能是读到的字节数，在上面的截图中也就是 6（ <code>xyzzy</code> 加上结束符）</p>
+</li>
+<li><p>read可能从一个文件读数据，如果到达了文件的结尾没有更多的内容了，read会返回 0</p>
+</li>
+<li><p>如果出现了一些错误，比如文件描述符不存在，read或许会返回 -1。</p>
+<blockquote>
+<p> 在后面的很多例子中，比如第16行，我都没有通过检查系统调用的返回来判断系统调用是否出错，但是你应该比我更加小心，你应该清楚系统调用通常是通过返回 -1 来表示错误，你应该检查所有系统调用的返回值以确保没有错误，这点和我们计算机系统安全的老师观点一致，值得重视。</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="open"><a href="#open" class="headerlink" title="open()"></a>open()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">open</span><span class="params">(<span class="type">const</span> <span class="type">char</span> * pathname, <span class="type">int</span> flags, <span class="type">mode_t</span> mode)</span></span>; </span><br></pre></td></tr></table></figure>
+
+<p>代码中的第11行，执行了 open 系统调用，将文件名 <code>output.txt</code> 作为第一个参数传入，第二个参数是一些标志位，用来告诉 open 系统调用在内核中的实现：我们将要创建并写入一个文件。</p>
+<p>open 系统调用会返回一个新分配的文件描述符，这里的文件描述符是一个小的数字，可能是2，3，4或者其他的数字。</p>
+<h3 id="wirte"><a href="#wirte" class="headerlink" title="wirte()"></a>wirte()</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//函数向打开的设备或文件中写数据。</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>   </span></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">write</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span>;  </span><br></pre></td></tr></table></figure>
+
+<p>之后，这个文件描述符作为第一个参数被传到了 write，write 的第二个参数是数据的指针，第三个参数是要写入的字节数，数据被写入到了文件描述符对应的文件中。</p>
+<p>每个进程都有一张文件描述符的表单，且<strong>这个文件描述符空间独立于其他进程</strong>，其中每一项指向不同的文件。文件描述符是独立的，但是不同进程可以同时打开相同的文件，且其文件描述符不一定相同，相同的文件描述符也可能指向不同的文件。</p>
+<h3 id="shell"><a href="#shell" class="headerlink" title="shell"></a>shell</h3><p>比如，当我输入 <code>ls</code> 时，实际的意义是我要求 Shell 运行名为 <code>ls</code> 的程序，文件系统中会有一个文件名为 <code>ls</code>，这个文件中包含了一些计算机指令，所以实际上，当我输入 <code>ls</code> 时，我是在<strong>要求 shell 运行位于文件ls内的这些计算机指令。</strong></p>
+<p><code>grep x</code> 会搜索输入中包含 <code>x</code> 的行，我可以告诉 shell 将输入重定向到文件 <code>out</code>，这样我们就可以查看 <code>out</code> 中的 <code>x</code>。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011302133.png" alt="image-20220225011302133"></p>
+<h3 id="fork"><a href="#fork" class="headerlink" title="fork()"></a>fork()</h3><p>fork() 系统调用是重点，lab中会用到。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011344942.png" alt="image-20220225011344942">在第12行，我们调用了 fork。</p>
+<p><code>fork</code> 会拷贝当前进程的内存，并创建一个新的进程，这里的内存包含了进程的指令和数据。之后，我们就有了两个拥有完全一样内存的进程。</p>
+<p>fork系统调用在两个进程中都会返回，在原始的进程中，fork系统调用会返回大于0的整数，这个是新创建进程的ID，而在新创建的进程中，fork系统调用会返回 0。</p>
+<p>所以即使两个进程的内存是完全一样的，我们还是可以通过 fork 的返回值区分旧进程和新进程。</p>
+<blockquote>
+<p>学生提问：<code>fork</code> 产生的子进程是不是总是与父进程是一样的？它们有可能不一样吗？</p>
+<p>Robert教授：在XV6中，除了 <code>fork</code> 的返回值，两个进程是一样的。两个进程的指令是一样的，数据是一样的，栈是一样的，同时，两个进程又有各自独立的地址空间，它们都认为自己的内存从0开始增长，但这里是不同的内存。 在一个更加复杂的操作系统，有一些细节我们现在并不关心，这些细节偶尔会导致父子进程不一致，但是在XV6中，父子进程除了fork的返回值，其他都是一样的。</p>
+<p>除了内存是一样的以外，<strong>文件描述符的表单也从父进程拷贝到子进程。</strong>所以如果父进程打开了一个文件，子进程可以看到同一个文件描述符，尽管子进程看到的是一个文件描述符的表单的拷贝。除了拷贝内存以外，fork还会拷贝文件描述符表单这一点还挺重要的。</p>
+</blockquote>
+<p>当我们在 Shell 中运行东西的时候，Shell 实际上会创建一个新的进程来运行你输入的每一个指令。所以，当我输入 ls 时，我们需要 Shell 通过 fork 创建一个进程来运行ls，这里需要某种方式来让这个新的进程来运行ls程序中的指令，加载名为ls的文件中的指令（也就是后面的exec系统调用）。</p>
+<h3 id="exec"><a href="#exec" class="headerlink" title="exec()"></a>exec()</h3><p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011530170.png" alt="image-20220225011530170"></p>
+<p>代码会执行exec系统调用，这个系统调用<strong>会从指定的文件中读取并加载指令，并替代当前调用进程的指令。</strong>从某种程度上来说，这样相当于<strong>丢弃了调用进程的内存，并开始执行新加载的指令。</strong></p>
+<p>所以第12行的系统调用exec会有这样的效果：操作系统从名为 <code>echo</code> 的文件中加载指令到当前的进程中，并替换了当前进程的内存，之后开始执行这些新加载的指令。同时，你可以传入命令行参数，exec 允许你传入一个命令行参数的数组，这里就是一个C语言中的指针数组，在上面代码的第10行设置好了一个字符指针的数组，这里的字符指针本质就是一个字符串（string）。</p>
+<p>所以这里等价于运行echo命令，并带上“this is echo” 这三个参数。所以当我运行exec文件：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011637130.png" alt="image-20220225011637130"></p>
+<ul>
+<li><p><strong>exec 系统调用会保留当前的文件描述符表单</strong>。所以任何在 exec 系统调用之前的文件描述符，例如0，1，2等，它们在新的程序中表示相同的东西。</p>
+</li>
+<li><p><strong>通常来说 exec 系统调用不会返回，因为 exec 会完全替换当前进程的内存，相当于当前进程不复存在了，所以exec系统调用已经没有地方能返回了。</strong></p>
+</li>
+</ul>
+<p>所以，exec 系统调用从文件中读取指令，执行这些指令，然后就没有然后了。exec 系统调用只会当出错时才会返回，因为某些错误会阻止操作系统为你运行文件中的指令，例如程序文件根本不存在，因为 exec 系统调用不能找到文件，exec 会返回 <code>-1</code> 来表示：出错了，我找不到文件。所以通常来说 exec 系统调用不会返回，它只会在kernel 不能运行相应的文件时返回。</p>
+<blockquote>
+<p>学生提问：argv 中的最后一个 0 是什么意思？</p>
+<p>Robert教授：它标记了数组的结尾，我们将 0 作为最后一个指针。argv 中的每一个字符串实际上是一块包含了数据的内存指针，但是第 5 个元素是 0，通常来说指针 0 是一个 NULL 指针，它只表明结束。所以内核中的代码会遍历这里的数组，直到它找到了值为0的指针。</p>
+</blockquote>
+<p>展示一个 <code>forkexec.c</code> 程序：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011753270.png" alt="image-20220225011753270"></p>
+<p>在这个程序中的第12行，调用了fork。子进程从第14行开始，我们在子进程中与前一个程序一样调用exec。子进程会用echo命令来代替自己，echo执行完成之后就退出。之后父进程重新获得了控制。fork会在父进程中返回大于0的值，父进程会继续在第19行执行。</p>
+<p>Unix提供了一个wait系统调用，如第20行所示。<strong>wait会等待之前创建的子进程退出。</strong>当我在命令行执行一个指令时，我们一般会希望shell等待指令执行完成。所以wait系统调用，使得父进程可以等待任何一个子进程返回。</p>
+<p><strong>这里wait的参数status，是一种让退出的子进程以一个整数（32 bit的数据）的格式与等待的父进程通信方式。所以在第17行，exit的参数是1，操作系统会将1从退出的子进程传递到第20行，也就是等待的父进程处。&amp;status，是将status对应的地址传递给内核，内核会向这个地址写入子进程向exit传入的参数。</strong></p>
+<blockquote>
+<p>此处贴一下我的理解， <code>wait(&amp;status)</code> 在父进程中调用，目的是让子进程把他的 <code>exit()</code> 状态码存储到 <code>status</code> 变量中。</p>
+</blockquote>
+<p>Unix 中的风格是，如果一个程序成功的退出了，那么exit的参数会是0，如果出现了错误，那么就会像第17行一样，会向exit传递1。所以，如果你关心子进程的状态的话，父进程可以读取wait的参数，并决定子进程是否成功的完成了。</p>
+<blockquote>
+<p>注意，上面是一种常用写法，先调用 <code>fork</code> ，再在子进程中调用 <code>exec</code> 。这里实际上有些浪费， <code>fork</code> 首先拷贝了整个父进程的内存，但是随后执行的 <code>exec</code> 将这整个拷贝丢弃了，并且用将要运行的文件替换了原来的内容。</p>
+<p>某种程度上来说这里的拷贝操作浪费了，因为所有拷贝的内存都被丢弃并被 <code>exec</code> 替换。在大型程序中这里的影响会比较明显。如果你运行了一个几 GB 的程序，并且调用 <code>fork</code> ，那么实际就会拷贝所有的内存，可能会要消耗将近 1 秒钟来完成拷贝，这可能会是个问题。</p>
+<p>之后的课程会实现一些优化，比如说 <code>copy-on-write fork</code> ，这种方式会消除 <code>fork</code> 的几乎所有的明显的低效，而只拷贝执行 <code>exec</code> 所需要的内存，这里需要很多涉及到虚拟内存系统的技巧。你可以构建一个 <code>fork</code> ，对于内存实行懒拷贝，通常来说 fork 之后立刻是 exec，这样你就不用实际的拷贝，因为子进程实际上并没有使用大部分的内存。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：当我们说子进程从父进程拷贝了所有的内存，这里具体指的是什么呢？是不是说子进程需要重新定义变量之类的？</p>
+<p>Robert教授：在编译之后， C 程序就是一些在内存中的指令，这些指令存在于内存中。所以这些指令可以被拷贝，因为它们就是<strong>内存中的字节</strong>，它们可以被拷贝到别处。通过一些有关虚拟内存的技巧，可以使得子进程的内存与父进程的内存一样，这里实际就是将父进程的内存镜像拷贝给子进程，并在子进程中执行。</p>
+<p>实际上，当我们在看 C 程序时，你应该认为它们就是一些机器指令，这些机器指令就是内存中的数据，所以可以被拷贝。</p>
+<p>学生提问：如果父进程有多个子进程，wait 是不是会在第一个子进程完成时就退出？这样的话，还有一些与父进程交错运行的子进程，是不是需要有多个wait来确保所有的子进程都完成？</p>
+<p>Robert教授：是的，<strong>如果一个进程调用fork两次，如果它想要等两个子进程都退出，它需要调用wait两次。</strong>每个wait会在一个子进程退出时立即返回。当wait返回时，你实际上没有必要知道哪个子进程退出了，但是<strong>wait返回了子进程的进程号</strong>，所以在wait返回之后，你就可以知道是哪个子进程退出了。</p>
+</blockquote>
+<h3 id="IO重定向"><a href="#IO重定向" class="headerlink" title="IO重定向"></a>IO重定向</h3><p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225012018361.png" alt="image-20220225012018361"></p>
+<p>Shell 之所以有这样的能力，是因为 Shell 首先会像第 13 行一样 fork，然后在子进程中，Shell改变了文件描述符。文件描述符1通常是进程用来作为输出的（也就是控制台的标准输出），Shell会将文件描述符1改为output文件，之后再运行你的指令。同时，父进程的文件描述符1并没有改变。所以这里先fork，再更改子进程的文件描述符，是Unix中的常见的用来重定向指令的输入输出的方法，这种方法同时又不会影响父进程的输入输出。因为我们不会想要重定向Shell的输出，我们只想重定向子进程的输出。</p>
+<p>我们可以看到预期的输出。代码第15行的close(1)的意义是，我们希望文件描述符1指向一个其他的位置。也就是说，在子进程中，我们不想使用原本指向console输出的文件描述符1。</p>
+<p>代码第16行的open一定会返回1，因为open会返回当前进程未使用的最小文件描述符序号。因为我们刚刚关闭了文件描述符1，而文件描述符0还对应着console的输入，所以open一定可以返回1。在代码第16行之后，文件描述符1与文件output.txt关联。</p>
+<p>这个例子同时也演示了分离fork和exec的好处。fork和exec是分开的系统调用，意味着在子进程中有一段时间，fork返回了，但是exec还没有执行，子进程仍然在运行父进程的指令。所以这段时间，尽管指令是运行在子进程中，但是这些指令仍然是父进程的指令，所以父进程仍然可以改变东西，直到代码执行到了第19行。这里fork和exec之间的间隔，提供了Shell修改文件描述符的可能。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/[object%20Object]/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/1.jpg">
+      <meta itemprop="name" content="Sam Shen">
+      <meta itemprop="description" content="share cs knowledge">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AcKing">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch3<i class="fa fa-external-link-alt"></i></a>
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:17:15" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081-os/" itemprop="url" rel="index"><span itemprop="name">mit6.s081 os</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Chapter-3"><a href="#Chapter-3" class="headerlink" title="Chapter 3"></a>Chapter 3</h1><h3 id="隔离性-isolation"><a href="#隔离性-isolation" class="headerlink" title="隔离性 isolation"></a>隔离性 isolation</h3><p>这一点主要体现在，multiplexing（CPU在多进程分时复用）和物理内存隔离。</p>
+<p>之前通过 <code>fork</code> 创建了进程。进程本身不是CPU，但是它们对应了CPU，它们使得你可以在CPU上运行计算任务。<strong>应用程序不能直接与CPU交互，只能与进程交互。</strong>操作系统内核会完成不同进程在CPU上的切换。所以，操作系统不是直接将CPU提供给应用程序，而是向应用程序提供 <code>进程</code>，进程抽象了CPU，这样操作系统才能在多个应用程序之间复用一个或者多个CPU。</p>
+<p>我们可以认为 exec 抽象了内存。当我们在执行 exec 系统调用的时候，我们会传入一个文件名，而这个文件名对应了一个应用程序的内存镜像。内存镜像里面包括了程序对应的指令，全局的数据。应用程序可以逐渐扩展自己的内存，但是应用程序并没有直接访问物理内存的权限，例如应用程序不能直接访问物理内存的 1000-2000 这段地址。不能直接访问的原因是，操作系统会提供内存隔离并控制内存，操作系统会在应用程序和硬件资源之间提供一个中间层。<strong>exec 是这样一种系统调用，它表明了应用程序不能直接访问物理内存。</strong></p>
+<p>另一个例子是文件，文件基本上来说抽象了磁盘。应用程序不会直接读写挂在计算机上的磁盘本身，并且在 Unix 中这也是不被允许的。在 Unix 中，与存储系统交互的唯一方式就是通过 files。Files 提供了非常方便的磁盘抽象，你可以对文件命名，读写文件等等。之后，操作系统会决定如何将文件与磁盘中的块对应，确保一个磁盘块只出现在一个文件中，并且确保用户A 不能操作用户B 的文件。通过 files 的抽象，可以实现不同用户之间和同一个用户的不同进程之间的文件强隔离。</p>
+<h3 id="防御性-defensive"><a href="#防御性-defensive" class="headerlink" title="防御性 defensive"></a>防御性 defensive</h3><p>当你在开发内核时，防御性是你必须掌握的一个思想。实际中的应用程序或许就是恶意的，这意味着我们需要在应用程序和操作系统之间提供强隔离性。</p>
+<p>简单来说，就是防止应用进程攻破内核区，一般两个手段：</p>
+<ul>
+<li>user&#x2F;kernel mode切换</li>
+<li>page table 即虚拟内存</li>
+</ul>
+<h3 id="硬件对于强隔离性的支持"><a href="#硬件对于强隔离性的支持" class="headerlink" title="硬件对于强隔离性的支持"></a>硬件对于强隔离性的支持</h3><p>举个例子，当一个应用程序尝试执行一条特殊权限指令，因为不允许在user mode执行特殊权限指令，处理器会拒绝执行这条指令。通常来说，这时会将控制权限从 user mode 切换到 kernel mode，当操作系统拿到控制权之后，或许会杀掉进程，因为应用程序执行了不该执行的指令。</p>
+<blockquote>
+<p>学生提问：那 BIOS 呢？BIOS 会在操作系统之前运行还是之后？</p>
+<p>Frans教授：BIOS 是一段计算机自带的代码，它会先启动，之后它会启动操作系统，所以BIOS需要是一段可被信任的代码，它最好是正确的，且不是恶意的。</p>
+<p>学生提问：之前提到，设置处理器中kernel mode的bit位的指令是一条特殊权限指令，那么一个用户程序怎么才能让内核执行任何内核指令？因为现在切换到kernel mode的指令都是一条特殊权限指令了，对于用户程序来说也没法修改那个bit位。</p>
+<p>Frans教授：你说的对，这也是我们想要看到的结果。可以这么来看这个问题，首先这里不是完全按照你说的方式工作，在RISC-V中，如果你在用户空间（user space）尝试执行一条特殊权限指令，用户程序会通过系统调用来切换到kernel mode。当用户程序执行系统调用，会通过ECALL触发一个软中断（software interrupt），软中断会查询操作系统预先设定的中断向量表，并执行中断向量表中包含的中断处理程序。中断处理程序在内核中，这样就完成了user mode到kernel mode的切换，并执行用户程序想要执行的特殊权限指令。</p>
+</blockquote>
+<p>处理器包含了 page table，而 page table 将虚拟内存地址与物理内存地址做了对应。</p>
+<p>每一个进程都会有自己独立的 page table，这样的话，每一个进程只能访问出现在自己 page table 中的物理内存。<strong>操作系统会设置 page table，使得每一个进程都有不重合的物理内存，这样一个进程就不能访问其他进程的物理内存</strong>，因为其他进程的物理内存都不在它的 page table 中。一个进程甚至都不能随意编造一个内存地址，然后通过这个内存地址来访问其他进程的物理内存。这样就给了我们内存的强隔离性。</p>
+<p>page table 定义了对于内存的视图，而每一个用户进程都有自己对于内存的独立视图。这给了我们非常强的内存隔离性。</p>
+<h3 id="User-x2F-Kernel-Mode-切换"><a href="#User-x2F-Kernel-Mode-切换" class="headerlink" title="User&#x2F;Kernel Mode 切换"></a>User&#x2F;Kernel Mode 切换</h3><p>我们可以认为 user&#x2F;kernel mode 是分隔用户空间和内核空间的边界，用户空间运行的程序运行在 user mode，内核空间的程序运行在 kernel mode，操作系统位于内核空间。</p>
+<p>我们需要有一种方式能够让应用程序可以将控制权转移给内核。在 RISC-V 中，有一个专门的指令用来实现这个功能，叫做 <code>ECALL</code>。<code>ECALL</code> 接收一个数字参数，当一个用户程序想要将程序执行的控制权转移到内核，它只需要执行 <code>ECALL</code> 指令，并传入一个数字。这里的数字参数代表了应用程序想要调用的系统调用。</p>
+<p>这里需要澄清的是，用户空间和内核空间的界限是一个硬性的界限，用户不能直接调用 <code>fork</code>，用户的应用程序执行系统调用的唯一方法就是通过 <code>ECALL</code> 指令。</p>
+<blockquote>
+<p>学生提问：操作系统在什么时候检查是否允许执行 <code>fork</code> 或者<code> write</code>？现在看起来应用程序只需要执行 <code>ECALL</code> 再加上系统调用对应的数字就能完成调用，但是内核在什么时候决定这个应用程序是否有权限执行特定的系统调用？</p>
+<p>Frans教授：是个好问题。原则上来说，在内核侧实现 <code>fork</code> 的位置可以实现任何的检查，例如检查系统调用的参数，并决定应用程序是否被允许执行 <code>fork</code> 系统调用。在 Unix 中，任何应用程序都能调用 fork，我们以 write 为例吧，<strong>write 的实现需要检查传递给 write 的地址（需要写入数据的指针）属于用户应用程序，这样内核才不会被欺骗向别的不属于应用程序的位置写入数据。</strong></p>
+<p>学生提问：当应用程序表现的恶意或者就是在一个死循环中，内核是如何夺回控制权限的？</p>
+<p>Frans教授：<strong>内核会通过硬件设置一个定时器，定时器到期之后会将控制权限从用户空间转移到内核空间</strong>，之后内核就有了控制能力并可以重新调度 CPU 到另一个进程中。我们接下来会看一些更加详细的细节。</p>
+</blockquote>
+<h3 id="宏内核与微内核"><a href="#宏内核与微内核" class="headerlink" title="宏内核与微内核"></a>宏内核与微内核</h3><p>内核有时候也被称为可被信任的计算空间（Trusted Computing Base），在一些安全的术语中也被称为 TCB。基本上来说，要被称为 TCB，内核首先要是正确且 bug-free 的。</p>
+<h4 id="宏内核"><a href="#宏内核" class="headerlink" title="宏内核"></a>宏内核</h4><p>大多数的 Unix 操作系统实现都运行在 kernel mode。比如，XV6 中，所有的操作系统服务都在 kernel mode 中，这种形式被称为 Monolithic Kernel Design（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Monolithic_kernel">宏内核</a>）。</p>
+<p>这里有几件事情需要注意：</p>
+<ul>
+<li>如果考虑Bug的话，宏内核不太好。在一个宏内核中，任何一个操作系统的Bug都有可能成为漏洞。因为我们现在在内核中运行了一个巨大的操作系统，出现Bug的可能性更大了。你们可以去查一些统计信息，平均每3000行代码都会有几个Bug，所以如果有许多行代码运行在内核中，那么出现严重Bug的可能性也变得更大。所以从安全的角度来说，在内核中有大量的代码是宏内核的缺点。</li>
+<li>另一方面，如果你去看一个操作系统，它包含了各种各样的组成部分，比如说文件系统，虚拟内存，进程管理，这些都是操作系统内实现了特定功能的子模块。宏内核的优势在于，<strong>因为这些子模块现在都位于同一个程序中，它们可以紧密的集成在一起，这样的集成提供很好的性能</strong>。例如 Linux，它就有很不错的性能。</li>
+</ul>
+<h4 id="微内核"><a href="#微内核" class="headerlink" title="微内核"></a>微内核</h4><p>另一种设计主要关注点是减少内核中的代码，它被称为 Micro Kernel Design（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Microkernel">微内核</a>）。在这种模式下，希望在 kernel mode 中运行尽可能少的代码。所以这种设计下还是有内核，但是内核只有非常少的几个模块，例如，内核通常会有一些 IPC 的实现或者是 Message passing；非常少的虚拟内存的支持，可能只支持了 page table；以及分时复用 CPU 的一些支持。</p>
+<p>某种程度上来说，这是一种好的设计。因为在内核中的代码的数量较小，<strong>更少的代码意味着更少的 Bug，微内核的问题在于性能更差</strong>，这里有两个方面需要考虑：</p>
+<ul>
+<li><p>在 user&#x2F;kernel mode 反复跳转带来的性能损耗。</p>
+</li>
+<li><p>在一个类似宏内核的紧耦合系统，各个组成部分，例如文件系统和虚拟内存系统，可以很容易的共享 page cache。而在微内核中，每个部分之间都很好的隔离开了，这种共享更难实现，进而导致更难在微内核中得到更高的性能。</p>
+</li>
+</ul>
+<h3 id="编译运行kernel"><a href="#编译运行kernel" class="headerlink" title="编译运行kernel"></a>编译运行kernel</h3><p>接下来我会切换到代码介绍，来看一下 XV6 是如何工作的。</p>
+<p>首先，我们来看一下代码结构，你们或许已经看过了。代码主要有三个部分组成：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226095531234.png" alt="image-20220226095531234"></p>
+<ul>
+<li>第一部分是 kernel ：我们可以 <code>ls kernel</code> 的内容，里面包含了基本上所有的内核文件。因为 XV6 是一个宏内核结构，这里所有的文件会被编译成一个叫做 <code>kernel</code> 的二进制文件，然后这个二进制文件会被运行在  kernle mode 中。</li>
+</ul>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226095603980.png" alt="image-20220226095603980"></p>
+<ul>
+<li>第二部分是 user ：这基本上是运行在 user mode 的程序。这也是为什么一个目录称为 kernel，另一个目录称为 user 的原因。</li>
+<li>第三部分是 mkfs ：它会创建一个空的文件镜像，我们会将这个镜像存在磁盘上，这样我们就可以直接使用一个空的文件系统。</li>
+</ul>
+<p>接下来，让我们不带 gdb 运行 XV6（make 会读取 Makefile 文件中的指令）。这里会编译文件，然后调用 QEMU（qemu-system-riscv64指令）。这里本质上是通过C语言来模拟仿真 RISC-V 处理器。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226095659801.png" alt="image-20220226095659801"></p>
+<p>我们来看传给QEMU的几个参数：</p>
+<ul>
+<li>-kernel：这里传递的是内核文件（kernel 目录下的 kernel 文件），这是将在 QEMU 中运行的程序文件。</li>
+<li>-m：这里传递的是 RISC-V 虚拟机将会使用的内存数量</li>
+<li>-smp：这里传递的是虚拟机可以使用的 CPU 核数</li>
+<li>-drive：传递的是虚拟机使用的磁盘驱动，这里传入的是 fs.img 文件</li>
+</ul>
+<p>直观来看，QEMU 是一个大型的开源C程序，你可以下载或者 <code>git clone</code> 它。<strong>但是在内部，在QEMU的主循环中，只在做一件事情：</strong></p>
+<ul>
+<li>读取 4 字节或者 8 字节的 RISC-V 指令。</li>
+<li>解析RISC-V指令，并找出对应的操作码（op code）。我们之前在看 <code>kernel.asm</code> 的时候，看过一些操作码的二进制版本。通过解析，或许可以知道这是一个 ADD 指令，或者是一个 SUB 指令。</li>
+<li>之后，在软件中执行相应的指令。</li>
+</ul>
+<h3 id="XV6-启动过程"><a href="#XV6-启动过程" class="headerlink" title="XV6 启动过程"></a>XV6 启动过程</h3><p>接下来，我会系统的介绍 XV6，让你们对 XV6 的结构有个大概的了解。在后面的课程，我们会涉及到更多的细节。</p>
+<p>首先，我会启动 QEMU，并打开 gdb。本质上来说 QEMU 内部有一个 gdb server，当我们启动之后，QEMU 会等待 gdb 客户端连接。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100740533.png" alt="image-20220226100740533"></p>
+<p>在连接上之后，我会在程序的入口处设置一个断点，因为我们知道这是 QEMU 会跳转到的第一个指令。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100811732.png" alt="image-20220226100811732"></p>
+<p>设置完断点之后，我运行程序，可以发现代码并没有停在 0x8000000（见3.7 <code>kernel.asm</code> 中，0x80000000 是程序的起始位置），而是停在了 <code>0x8000000a</code>。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100839203.png" alt="image-20220226100839203"></p>
+<p>如果我们查看kernel的汇编文件，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100856581.png" alt="image-20220226100856581"></p>
+<p>我们可以看到，在地址 <code>0x8000000a</code> 读取了控制系统寄存器（Control System Register）mhartid，并将结果加载到了 <code>a1</code> 寄存器。所以QEMU会模拟执行这条指令，之后执行下一条指令。</p>
+<p>地址 <code>0x80000000</code> 是一个被QEMU认可的地址。也就是说如果你想使用QEMU，那么第一个指令地址必须是它。所以，我们会让内核加载器从那个位置开始加载内核。如果我们查看 <code>kernel.ld</code>，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100940653.png" alt="image-20220226100940653"></p>
+<p>我们可以看到，这个文件定义了内核是如何被加载的，从这里也可以看到，内核使用的起始地址就是QEMU指定的 0x80000000 这个地址。这就是我们操作系统最初运行的步骤。</p>
+<p>回到 gdb，我们可以看到 gdb 也显示了指令的二进制编码</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101014271.png" alt="image-20220226101014271"></p>
+<p>可以看出，csrr 是一个4字节的指令，而 addi 是一个 2 字节的指令。</p>
+<p>我们这里可以看到，XV6 从 <code>entry.s</code> 开始启动，这个时候没有内存分页，没有隔离性，并且运行在 machine mode。XV6 会尽可能快的跳转到 kernel mode 或者说是 supervisor mode。我们在 main 函数设置一个断点，main 函数已经运行在supervisor mode 了。接下来我运行程序，代码会在断点，也就是 main 函数的第一条指令停住。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101059110.png" alt="image-20220226101059110"></p>
+<p>上图中，左下是gdb的断点显示，右边是main函数的源码。接下来，我想运行在 gdb 的 <code>layout split</code> 模式：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101200955.png" alt="image-20220226101200955"></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101214918.png" alt="image-20220226101214918"></p>
+<p>从这个视图可以看出 gdb 要执行的下一条指令是什么，断点具体在什么位置。</p>
+<p>这里我只在一个 CPU 上运行 QEMU（见最初的 make 参数），这样会使得gdb调试更加简单。因为现在只指定了一个 CPU 核，QEMU只会仿真一个核，我可以单步执行程序（<strong>在单核或者单线程场景下，单个断点就可以停止整个程序的运行</strong>）。</p>
+<p>通过在 gdb 中输入 n，可以挑到下一条指令。这里调用了一个名为 <code>consoleinit</code> 的函数，它的工作与你想象的完全一样，也就是设置好console。一旦 <code>console</code> 设置好了，接下来可以向 <code>console</code> 打印输出（代码16、17行）。执行完16、17行之后，我们可以在 QEMU 看到相应的输出。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101310563.png" alt="image-20220226101310563"></p>
+<p>除了 console 之外，还有许多代码来做初始化。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101330404.png" alt="img"></p>
+<ul>
+<li>kinit：设置好页表分配器（page allocator）</li>
+<li>kvminit：设置好虚拟内存，这是下节课的内容</li>
+<li>kvminithart：打开页表，也是下节课的内容</li>
+<li>processinit：设置好初始进程或者说设置好进程表单</li>
+<li>trapinit&#x2F;trapinithart：设置好user&#x2F;kernel mode转换代码</li>
+<li>plicinit&#x2F;plicinithart：设置好中断控制器PLIC（Platform Level Interrupt Controller），我们后面在介绍中断的时候会详细的介绍这部分，这是我们用来与磁盘和console交互方式</li>
+<li>binit：分配buffer cache</li>
+<li>iinit：初始化inode缓存</li>
+<li>fileinit：初始化文件系统</li>
+<li>virtio_disk_init：初始化磁盘</li>
+<li>userinit：最后当所有的设置都完成了，操作系统也运行起来了，会通过 userinit 运行第一个进程，这里有点意思，接下来我们看一下userinit</li>
+</ul>
+<blockquote>
+<p>学生提问：这里的初始化函数的调用顺序重要吗？</p>
+<p>Frans教授：重要，哈哈。一些函数必须在另一些函数之后运行，某几个函数的顺序可能不重要，但是对它们又需要在其他的一些函数之后运行。</p>
+</blockquote>
+<p>可以通过 gdb 的 s 指令，跳到 <code>userinit</code> 内部。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101414105.png" alt="img"></p>
+<p>上图是 <code>userinit</code> 函数，右边是源码，左边是 gdb 视图。<code>userinit</code> 有点像是胶水代码（Glue code，胶水代码不实现具体的功能，只是为了适配不同的部分而存在），它利用了 XV6 的特性，并启动了第一个进程。我们总是需要有一个用户进程在运行，这样才能实现与操作系统的交互，所以这里需要一个小程序来初始化第一个用户进程。这个小程序定义在 <code>initcode</code> 中。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101514511.png" alt="image-20220226101514511"></p>
+<p>这里直接是程序的二进制形式，它会链接或者在内核中直接静态定义。实际上，这段代码对应了下面的汇编程序。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101527673.png" alt="image-20220226101527673"></p>
+<p>这个汇编程序中，它首先将 init 中的地址加载到 a0（la a0, init），argv 中的地址加载到 a1（la a1, argv），exec 系统调用对应的数字加载到 a7（li a7, SYS_exec），最后调用 ECALL。所以这里执行了 3 条指令，之后在第4条指令将控制权交给了操作系统。</p>
+<p>如果我在 syscall 中设置一个断点，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101628075.png" alt="img"></p>
+<p>并让程序运行起来。userinit 会创建初始进程，返回到用户空间，执行刚刚介绍的3条指令，再回到内核空间。这里是任何XV6用户会使用到的第一个系统调用。让我们来看一下会发生什么。通过在 gdb 中执行 <code>c</code>，让程序运行起来，我们现在进入到了 syscall 函数。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101648651.png" alt="img"></p>
+<p>我们可以查看 syscall 的代码，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101744620.png" alt="img"></p>
+<p><code>num = p-&gt;trapframe-&gt;a7</code> 会读取使用的系统调用对应的整数。当代码执行完这一行之后，我们可以在 gdb 中打印 <code>num</code>，可以看到是7。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101815494.png" alt="img"></p>
+<p>如果我们查看 <code>syscall.h</code>，可以看到 7 对应的是 exec 系统调用。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101832443.png" alt="img"></p>
+<p>所以，这里本质上是告诉内核，某个用户应用程序执行了 ECALL 指令，并且想要调用 exec 系统调用。</p>
+<p><code>p-&gt;trapframe-&gt;a0 = syscall[num]()</code> 这一行是实际执行系统调用。这里可以看出，num 用来索引一个数组，这个数组是一个函数指针数组，可以预期的是 <code>syscall[7]</code> 对应了 exec 的入口函数。我们跳到这个函数中去，可以看到，我们现在在 <code>sys_exec</code> 函数中。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226102020008.png" alt="img"></p>
+<p><code>sys_exec</code> 中的第一件事情是从用户空间读取参数，它会读取 path，也就是要执行程序的文件名。这里首先会为参数分配空间，然后从用户空间将参数拷贝到内核空间。之后我们打印 path，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226102055734.png" alt="img"></p>
+<p>可以看到传入的就是 init 程序。所以，综合来看，initcode 完成了通过 exec 调用 init 程序。让我们来看看 init 程序，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226102131715.png" alt="img"></p>
+<p>init 会为用户空间设置好一些东西，比如配置好 console，调用 fork，并在 fork 出的子进程中执行 shell。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226102158685.png" alt="img"></p>
+<p>最终的效果就是 shell 运行起来了。如果我再次运行代码，我还会陷入到 syscall 中的断点，并且同样也是调用 exec 系统调用，只是这次是通过 exec 运行 shell。当 shell 运行起来之后，我们可以从 QEMU 看到 shell。</p>
+<p>这里简单的介绍了一下 XV6 是如何从零开始直到第一个 shell 程序运行起来。并且我们也看了一下第一个系统调用是在什么时候发生的。我们并没有看系统调用背后的具体机制，这个在后面会介绍。但是目前来说，这些对于你们完成这周的 syscall lab 是足够了。这些就是你们在实验中会用到的部分。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/[object%20Object]/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/1.jpg">
+      <meta itemprop="name" content="Sam Shen">
+      <meta itemprop="description" content="share cs knowledge">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AcKing">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch4<i class="fa fa-external-link-alt"></i></a>
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:17:19" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081-os/" itemprop="url" rel="index"><span itemprop="name">mit6.s081 os</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Chapter-4-Page-Tables"><a href="#Chapter-4-Page-Tables" class="headerlink" title="Chapter 4 Page Tables"></a>Chapter 4 Page Tables</h1><p>存在某种形式的映射关系，并且映射关系对于实现隔离性 isolation 来说有帮助。</p>
+<h3 id="地址空间"><a href="#地址空间" class="headerlink" title="地址空间"></a>地址空间</h3><p>当我们运行 <code>cat</code> 时，它的地址空间从 0 到某个地址结束。当我们运行 <code>Shell</code> 时，它的地址也从 0 开始到某个地址结束。内核的地址空间也从 0 开始到某个地址结束。如果 <code>cat</code> 程序想要向地址 1000 写入数据，那么 <code>cat</code> 只会向它自己的地址 1000，而不是向 <code>Shell</code> 的地址 1000 写入数据。</p>
+<p><strong>每个程序都运行在自己的地址空间，并且这些地址空间彼此之间相互独立。在这种不同地址空间的概念中，<code>cat</code> 程序甚至都不具备引用属于 <code>Shell</code> 的内存地址的能力。</strong>这是我们想要达成的终极目标，因为这种方式为我们提供了<strong>强隔离性</strong>，<code>cat</code> 现在不能引用任何不属于自己的内存。</p>
+<p>所以现在的问题是如何在一个物理内存上，创建不同的地址空间，因为归根到底，我们使用的还是一堆存放了内存信息的 DRAM 芯片。</p>
+<blockquote>
+<p>Frans 教授提问：大家们，在XV6中从哪可以看到内存耗尽了？如果你们完成了 syscall 实验，你们会知道在 syscall 实验中有一部分是打印剩余内存的数量。</p>
+<p>学生回答：kalloc？</p>
+<p>Frans教授：是的。<code>kalloc</code> 保存了空余 page 的列表( freelist )，如果这个列表为空或者耗尽了，那么 kalloc 会返回一个空指针，内核会妥善处理并将结果返回给用户应用程序。并告诉用户应用程序，要么是对这个应用程序没有额外的内存了，要么是整个机器都没有内存了。</p>
+<p>内核的一部分工作就是优雅的处理这些情况，这里的优雅是指向用户应用程序返回一个错误消息，而不是直接崩溃。</p>
+</blockquote>
+<h3 id="页表-Page-Table"><a href="#页表-Page-Table" class="headerlink" title="页表(Page Table)"></a>页表(Page Table)</h3><p>我们如何能够在一个物理内存上创建不同的地址空间？</p>
+<p>最常见的方法，同时也是非常灵活的一种方法就是使用页表（Page Tables）。<strong>页表是在硬件中通过处理器和内存管理单元（Memory Management Unit,aka MMU）实现。</strong>所以在脑海中，应该有这么一张图：CPU 正在执行指令，例如 <code>sd $7, (a0)</code></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002431824.png" alt="image-20220227002431824"></p>
+<p><strong>对于任何一条带有地址的指令，其中的地址应该认为是虚拟内存地址而不是物理地址</strong>。假设寄存器 <code>a0</code> 中是地址 <code>0x1000</code> ，那么这是一个虚拟内存地址。虚拟内存地址会被转到内存管理单元（MMU）</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002924560.png" alt="image-20220227002924560"></p>
+<p>内存管理单元会将虚拟地址翻译成物理地址，之后这个物理地址会被用来索引物理内存，并从物理内存加载，或者向物理内存存储数据。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003015460.png" alt="img"></p>
+<p><strong>从 CPU 的角度来说，一旦 MMU 打开了，它执行的每条指令中的地址都是虚拟内存地址。</strong></p>
+<p>为了能够完成虚拟内存地址到物理内存地址的翻译，MMU 会有一个表单，表单中，一边是虚拟内存地址，另一边是物理内存地址。举个例子，虚拟内存地址 <code>0x1000</code> 对应了一个我随口说的物理内存地址 <code>0xFFF0</code> 。这样的表单可以非常灵活。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003037993.png" alt="img"></p>
+<p><strong>通常，内存地址对应关系的表单也保存在内存中。</strong>所以 CPU 中需要有一些寄存器用来存放<strong>表单在物理内存中的地址。</strong>现在，在内存的某个位置保存了地址关系表单，我们假设这个位置的物理内存地址是 <code>0x10</code> 。那么在 <code>RISC-V</code> 上一个叫做 <strong>SATP</strong> 的寄存器会保存地址 <code>0x10</code>。</p>
+<p>这样，CPU 就可以告诉 MMU，可以从哪找到将虚拟内存地址翻译成物理内存地址的表单。</p>
+<blockquote>
+<p>sqf 注：page table一般存储在内存中，由寄存器 SATP 指向其起始地址。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：所以 MMU 并不会保存 page table，它只会从内存中读取 page table，然后完成翻译，是吗？</p>
+<p>Frans教授：是的，这就是你们应该记住的。<strong>page table 保存在内存中，MMU 只是会去查看 page table</strong>， 我们接下来会看到，page table 比我们这里画的要稍微复杂一些。</p>
+</blockquote>
+<p>这里的基本想法是<strong>每个应用程序都有自己独立的表单，并且这个表单定义了应用程序的地址空间。</strong>所以当操作系统将CPU从一个应用程序切换到另一个应用程序时，同时也需要切换 <strong>SATP</strong> 寄存器中的内容，从而<strong>指向新的进程保存在物理内存中的地址对应表单。</strong>这样的话，<code>cat</code> 程序和 <code>shell</code> 程序中相同的虚拟内存地址，就可以翻译到不同的物理内存地址，因为每个应用程序都有属于自己的不同的地址对应表单。这样说得通吗？</p>
+<blockquote>
+<p>学生提问：刚刚说到 SATP 寄存器会根据进程而修改，我猜每个进程对应的 SATP 值是由内核保存的？</p>
+<p>Frans教授：是的，<strong>内核会写 SATP 寄存器，写 SATP 寄存器是一条特殊权限指令。</strong>所以，用户应用程序不能通过更新这个寄存器来更换一个地址对应表单，否则的话就会破坏隔离性。所以，只有运行在 kernel mode 的代码可以更新这个寄存器。</p>
+</blockquote>
+<p>前面都是最基本的介绍，我们在前面画的图还有做的解释都比较初级且存在明显不合理的地方。有一件事情我刚刚没有提到，这里的表单是如何工作的？从刚刚画的图看来，对于每个虚拟地址，在表单中都有一个条目，如果我们真的这么做，表单会有多大？原则上说，在 RISC-V 上会有多少地址，或者一个寄存器可以保存多少个地址？寄存器是 64bit 的，所以有多少个地址呢？是的，$2^{64}$ 个地址，<strong>所以如果我们以地址为粒度来管理，表单会变得非常巨大</strong>。实际上，所有的内存都会被这里的表单耗尽，所以这一点也不合理。</p>
+<p>所以，实际情况不可能是一个虚拟内存地址对应 page table 中的一个条目。接下来我将分两步介绍 RISC-V 中是如何工作的。</p>
+<ul>
+<li>不要为每个地址创建一条表单条目，而是为每个 page 创建一条表单条目，所以每一次地址翻译都是针对一个 page。而 RISC-V 中，一个 page 是 4KB，也就是 4096 Byte 。这个大小很常见，几乎所有的处理器都使用 4KB 大小的 page 或者支持 4KB 大小的 page。</li>
+</ul>
+<p>现在，内存地址的翻译方式略微的不同了。首先对于虚拟内存地址，我们将它划分为两个部分，index 和 offset，index 用来查找 page，offset 对应的是一个 page 中的哪个字节。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003501859.png" alt="img"></p>
+<p>当 MMU 在做地址翻译的时候，通过读取虚拟内存地址中的 index 可以知道物理内存中的 page 号，这个 page 号对应了物理内存中的 4096 个字节。之后虚拟内存地址中的 offset 指向了 page 中的 4096 个字节中的某一个，假设 offset 是 12，那么 page 中的第 12 个字节被使用了。将 offset 加上 page 的起始地址，就可以得到物理内存地址。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003553962.png" alt="image-20220227003553962"></p>
+<p>有关 RISC-V 的一件有意思的事情是，虚拟内存地址都是 64bit，这也说的通，因为 RISC-V 的寄存器是 64bit 的。但是实际上，在我们使用的 RSIC-V 处理器上，并不是所有的 64bit 都被使用了，也就是说高 25bit 并没有被使用。这样的结果是<strong>限制了虚拟内存地址的数量</strong>，虚拟内存地址的数量现在只有 $2^{39}$ 个，大概是 512 GB。当然，如果必要的话，最新的处理器或许可以支持更大的地址空间，只需要将未使用的 25bit 拿出来做为虚拟内存地址的一部分即可。在有效利用的 39 bit 中，有 27bit 被用来当做 index，12bit 被用来当做 offset，offset 必须是 12bit，因为对应了一个 page 的 4096 个字节。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003719415.png" alt="img"></p>
+<p>在 RISC-V 中，物理内存地址是 56bit，所以物理内存可以大于单个虚拟内存地址空间，但是也最多到 $2^{56}$。大多数主板还不支持 $2^{56}$ 这么大的物理内存，但是原则上，如果你能造出这样的主板，那么最多可以支持 $2^{56}$ 字节的物理内存。</p>
+<p>物理内存地址是 56bit ，其中 44bit 是物理 page 号（PPN，Physical Page Number），剩下 12bit 是 offset 完全继承自虚拟内存地址（<strong>地址转换时，只需要将虚拟内存中的 27bit 翻译成物理内存中的 44bit 的 page 号，剩下的 12bit offset直接拷贝过来即可</strong>）。</p>
+<p>这里有什么问题吗？这些的内容还挺重要的，你们需要掌握这的内容才能做出下一个 page table lab。</p>
+<blockquote>
+<p>学生：图中的 56bit 是根据什么确定的？</p>
+<p>Frans教授：这是由硬件设计人员决定的，所以 RISC-V 的设计人员认为 56bit 的物理内存地址是个不错的选择。可以假定，他们是通过技术发展的趋势得到这里的数字。比如说，设计是为了满足 5 年的需求，可以预测物理内存在 5 年内不可能超过 $2^{56}$ 这么大。或许，他们预测是的一个小得多的数字，但是为了防止预测错误，他们选择了像 $2^{56}$ 这么大的数字。这里说的通吗？很多同学都问了这个问题。</p>
+<p>学生提问：<strong>如果虚拟内存最多是 $2^{39}$，而物理内存最多是 $2^{56}$，这样我们可以有多个进程都用光了他们的虚拟内存，但是物理内存还有剩余，对吗？</strong></p>
+<p>Frans教授：是的，完全正确。</p>
+<p>学生提问：因为这是一个 64bit 的机器，为什么硬件设计人员本可以用 64bit 但是却用了 56bit？</p>
+<p>Frans教授：选择 56bit 而不是 64bit 是因为在主板上只需要 56 根线。</p>
+</blockquote>
+<p>通过前面的第一步，我们现在的地址转换表是以 page 为粒度，而不是以单个内存地址为粒度，现在这个地址转换表已经可以被称为 page table 了。但是目前的设计还不能满足实际的需求。</p>
+<p>如果每个进程都有自己的 page table，那么每个 page table 表会有多大呢？</p>
+<p>这个page table最多会有 $2^{27}$ 个条目（虚拟内存地址中的 index 长度为27），这是个非常大的数字。如果每个进程都使用这么大的 page table，进程需要为 page table 消耗大量的内存，并且很快物理内存就会耗尽。</p>
+<p>所以实际上，硬件并不是按照这里的方式来存储 page table。从概念上来说，你可以认为 page table 是从 0 到 $2^{27}$ ，但是实际上并不是这样。实际中，page table 是一个多级的结构。下图是一个真正的 RISC-V page table 结构和硬件实现。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227004115306.png" alt="img"></p>
+<p>我们之前提到的虚拟内存地址中的 27bit 的 index，实际上是由 3 个 9bit 的数字组成（L2，L1，L0）。前 9bit 被用来索引最高级的 page directory（注：通常 page directory 是用来索引 page table 或者其他 page directory 物理地址的表单，但是在课程中，page table，page directory， page directory table 区分并不明显，可以都认为是有相同结构的地址对应表单）。</p>
+<p>一个 directory 是 4096 Bytes，就跟 page 的大小是一样的，directory 中的一个条目被称为 PTE（Page Table Entry）是 64 bit，就像寄存器的大小一样，也就是 8 Bytes，所以一个 Directory page 有 512 个条目。</p>
+<p>所以实际上，<strong>SATP 寄存器会指向最高一级的 page directory 的物理内存地址</strong>，之后我们用虚拟内存中 index 的高 9 bit 用来索引最高一级的 page directory，这样我们就能得到一个 PPN，也就是物理 page 号。这个 PPN 指向了中间级的 page directory。</p>
+<p><strong>当我们在使用中间级的 page directory 时，我们通过虚拟内存地址中的 L1 部分完成索引。接下来会走到最低级的 page directory，我们通过虚拟内存地址中的 L0 部分完成索引。在最低级的 page directory 中，我们可以得到对应于虚拟内存地址的物理内存地址。</strong></p>
+<p>从某种程度上来说，与之前一种方案还是很相似的，除了实际的索引是由 3 步，而不是 1 步完成。这种方式的主要优点是，如果地址空间中大部分地址都没有使用，你不必为每一个 index 准备一个条目。</p>
+<blockquote>
+<p> 举个例子，如果你的地址空间只使用了一个page，4096 Byte。除此之外，你没有使用任何其他的地址。现在，你需要多少个 page table entry，或者page table directory来映射这一个page？</p>
+<p>在最高级，你需要一个 page directory。在这个 page directory 中，你需要一个数字是 0 的PTE，指向中间级 page directory。在中间级，你也需要一个 page directory，里面也是一个数字 0 的PTE，指向最低级 page directory。所以这里总共需要 3 个 page directory（也就是 3 * 512 个条目）。</p>
+</blockquote>
+<p>而在前一个方案中，虽然我们只使用了一个page，还是需要 $2^{27}$ 个PTE。而这个方案中，我们只需要 1536 个PTE，所需的空间大大减少了。这是实际上硬件采用这种层次化的 3 级 page directory 结构的主要原因。</p>
+<p>这里有什么问题吗？这部分还是很重要的。</p>
+<blockquote>
+<p>Frans教授：所有的 page directory 传递的都是 PPN，对应的物理地址是 44bit 的PPN加上 12bit 的 0（注，也就是 page 的起始地址，因为每个 page directory 都使用一个完整的 page，所以直接从 page 起始地址开始使用就行）。如果我们查看这里的 PTE 条目，它们都有相同的格式，其中 44bit 是PPN，但是寄存器是 64bit 的，所有有一些 bit 是留空的。<strong>支持 page 的硬件在低 10bit 存了一些标志位用来控制地址权限。</strong></p>
+<p>如果你把 44bit 的 PPN 和 10bit 的 Flags 相加是 54bit，也就是说还有 10bit 未被使用，这 10bit 被用来作为未来扩展。比如说某一天你有了一个新的 RISC-V 处理器，它的 page table 可能略有不同，或许有超过 44bit 的 PPN。如果你看下面这张图，你可以看到，这里有 10bit 是作为保留字段存在的。</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227004744286.png" alt="img"></p>
+<p>接下来，让我们看看PTE中的 Flag，因为它也很重要。每个 PTE 的低 10bit 是一堆标志位：</p>
+<ul>
+<li>第一个标志位是 Valid。如果Valid bit位为1，那么表明这是一条合法的PTE，你可以用它来做地址翻译。对于刚刚举得那个小例子（应用程序只用了1个page的例子），我们只使用了3个page directory，每个page directory中只有第0个PTE被使用了，所以只有第0个PTE的Valid bit位会被设置成1，其他的511个PTE的Valid bit为0。这个标志位告诉MMU，你不能使用这条PTE，因为这条PTE并不包含有用的信息。</li>
+<li>下两个标志位分别是 Readable 和 Writable。表明你是否可以读&#x2F;写这个 page。</li>
+<li>Executable 表明你可以从这个page执行指令。</li>
+<li>User 表明这个 page 可以被运行在用户空间的进程访问。</li>
+<li>其他标志位并不是那么重要，他们偶尔会出现，前面 5个是重要的标志位。</li>
+</ul>
+<blockquote>
+<p>学生提问：我对于这里的 3个 page table 有个问题，PPN是如何合并成最终的物理内存地址？</p>
+<p>Frans教授：我之前或许没有很直接的说这部分，<strong>在最高级的page directory中的PPN，包含了下一级page directory的物理内存地址，依次类推。在最低级page directory，我们还是可以得到 44bit的PPN，这里包含了我们实际上想要翻译的物理page地址，然后再加上虚拟内存地址的 12bit offset，就得到了 56bit物理内存地址</strong>。</p>
+<p>Frans教授：<strong>让我来问自己的一个有趣的问题，为什么是 PPN 存在这些 page directory 中？为什么不是一个虚拟内存地址？</strong></p>
+<p>Frans教授：<strong>我们不能让我们的地址翻译依赖于另一个翻译，否则我们可能会陷入递归的无限循环中。所以 page directory 必须存物理地址。那 SATP 呢？它存的是物理地址还是虚拟地址？</strong></p>
+<p>某学生回答：还是物理地址，因为最高级的 page directory 还是存在物理内存中，对吧。</p>
+<p>Frans教授：是的，这里必须是物理地址，因为我们要用它来完成地址翻译，而不是对它进行地址翻译，所以 <strong>SATP 需要知道最高一级的 page directory 的物理地址是什么。</strong></p>
+<p>学生提问： 这里有层次化的 3个 page table，每个 page table 都由虚拟地址的 9bit 来索引，所以是由虚拟地址中的 3个 9bit来分别索引 3个 page table，对吗？</p>
+<p>Frans教授：是的，最高的 9bit 用来索引最高一级的 page directory，第二个 9bit 用来索引中间级的page directory，第三个 9bit 用来索引最低级的 page directory。</p>
+<p>学生提问：当一个进程请求一个虚拟内存地址时，CPU 会查看 SATP 寄存器得到对应的最高一级 page table，这级 page table 会使用虚拟内存地址中 27bit index 的最高 9bit 来完成索引，如果索引的结果为空，MMU 会自动创建一个 page table吗？</p>
+<p>Frans教授：不会的，MMU 会告诉操作系统或者处理器，抱歉我不能翻译这个地址，最终这会变成一个 page fault。如果一个地址不能被翻译，那就不翻译。就像你在运算时除以 0 一样，处理器会拒绝那样做。</p>
+<p>学生提问：我想知道我们是怎么计算 page table 的物理地址，是不是这样，我们从最高级的 page table 得到 44bit 的PPN，然后再加上虚拟地址中的 12bit offset，就得到了完整的 56bit page table 物理地址？</p>
+<p>Frans教授：我们不会加上虚拟地址中的 offset，这里只是使用了 12bit 的 0，<strong>我们用 44bit 的 PPN，再加上 12bit 的 0，这样就得到了下一级 page directory 的 56bit 物理地址</strong>。这里要求每个 page directory 都与物理 page 对齐（也就是 page directory 的起始地址就是某个 page 的起始地址，所以低 12bit 都为 0）</p>
+</blockquote>
+<h3 id="页表缓存-TLB-Translation-Lookside-Buffer"><a href="#页表缓存-TLB-Translation-Lookside-Buffer" class="headerlink" title="页表缓存 TLB(Translation Lookside Buffer)"></a>页表缓存 TLB(Translation Lookside Buffer)</h3><p>如果我们回想一下 page table 的结构，你可以发现，当处理器从内存加载或者存储数据时，基本上都要做3次内存查找，第一次在最高级的 page directory，第二次在中间级的 page directory，最后一次在最低级的 page directory。所以对于一个虚拟内存地址的寻址，需要读三次内存，这里代价有点高。所以实际中，几乎所有的处理器都会对于最近使用过的虚拟地址的翻译结果有缓存。这个缓存被称为：Translation Lookside Buffer（通常翻译成页表缓存），你会经常看到它的缩写 TLB。基本上来说，这就是 Page Table Entry 的缓存，也就是PTE的缓存。</p>
+<p><strong>当处理器第一次查找一个虚拟地址时，硬件通过 3级 page table 得到最终的 PPN，TLB 会保存虚拟地址到物理地址的映射关系。这样下一次当你访问同一个虚拟地址时，处理器可以查看 TLB，TLB 会直接返回物理地址，而不需要通过 page table 得到结果。</strong></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005059594.png" alt="img"></p>
+<blockquote>
+<p>学生提问：前面说 TLB 会保存虚拟地址到物理地址的对应关系，如果在page 级别做 cache 是不是更加高效？</p>
+<p>Frans教授：有很多种方法都可以实现 TLB，对于你们来说最重要的是知道 TLB 是存在的。TLB 实现的具体细节不是我们要深入讨论的内容。这是处理器中的一些逻辑，对于操作系统来说是不可见的，操作系统也不需要知道 TLB 是如何工作的。<strong>你们需要知道 TLB 存在的唯一原因是，如果你切换了 page table，操作系统需要告诉处理器当前正在切换 page table，处理器会清空 TLB。</strong>因为本质上来说，如果你切换了page table，TLB 中的缓存将不再有用，它们需要被清空，否则地址翻译可能会出错。所以操作系统知道 TLB 是存在的，但只会时不时的告诉操作系统，现在的 TLB 不能用了，因为要切换 page table 了。在 RISC-V 中，清空TLB的指令是 <code>sfence_vma</code> 。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：3级的 page table 是由操作系统实现的还是由硬件自己实现的？</p>
+<p>Frans教授：这是由硬件实现的，所以 3级 page table 的查找都发生在硬件中。<strong>MMU 是硬件的一部分而不是操作系统的一部分。</strong>在 XV6 中，有一个函数也实现了 page table 的查找，因为时不时的 XV6 也需要完成硬件的工作，所以XV6有这个叫做 <code>walk</code> 的函数，它在软件中实现了 MMU 硬件相同的功能。</p>
+<p>学生提问：在这个机制中，TLB 发生在哪一步，是在地址翻译之前还是之后？</p>
+<p>Frans教授：整个 CPU 和 MMU 都在处理器芯片中，所以在一个 RISC-V 芯片中，<strong>有多个 CPU 核，MMU 和 TLB 存在于每一个 CPU核里面。</strong>RISC-V 处理器有 L1 cache，L2 Cache，有些 cache 是根据物理地址索引的，有些 cache 是根据虚拟地址索引的。<strong>由虚拟地址索引的 cache 位于 MMU 之前，由物理地址索引的 cache 位于 MMU 之后。</strong></p>
+<p>学生提问：之前提到，硬件会完成 3级 page table 的查找，那为什么我们要在 XV6 中有一个 walk 函数来完成同样的工作？</p>
+<p>Frans教授：非常好的问题。这里有几个原因：</p>
+<ul>
+<li>首先 XV6 中的 walk 函数设置了最初的 page table，它需要对 3级page table 进行编程，所以它首先需要能模拟 3级 page table。</li>
+<li>另一个原因或许你们已经在 syscall 实验中遇到了，在 XV6 中，内核有它自己的 page table，用户进程也有自己的 page table，<strong>用户进程指向 <code>sys_info</code> 结构体的指针存在于用户空间的 page table，但是内核需要将这个指针翻译成一个自己可以读写的物理地址。</strong>如果你查看 <code>copy_in</code> ，<code>copy_out</code> ，你可以发现内核会通过用户进程的 page table，将用户的虚拟地址翻译得到物理地址，这样内核可以读写相应的物理内存地址。这就是为什么在 XV6 中需要有 walk 函数的一些原因。</li>
+</ul>
+<p>学生提问：为什么硬件不开发类似于 walk 函数的接口？这样我们就不用在 XV6 中用软件实现自己的接口，自己实现还容易有bug。为什么没有一个特殊权限指令，接收虚拟内存地址，并返回物理内存地址？</p>
+<p>Frans教授：其实这就跟你向一个虚拟内存地址写数据，硬件会自动帮你完成工作一样（工作是指翻译成物理地址，并完成数据写入）。你们在page table实验中会完成相同的工作。我们接下来在看XV6的实现的时候会看到更多的内容。</p>
+</blockquote>
+<p>在我们介绍XV6之前，有关 page table 我还想说一点。用时髦的话说，page table 提供了一层抽象（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Indirection">level of indirection</a>）。我这里说的抽象就是指从虚拟地址到物理地址的映射，这里的映射关系完全由操作系统控制。</p>
+<p>因为操作系统对于这里的地址翻译有完全的控制，它可以实现各种各样的功能。比如，当一个 PTE 是无效的，硬件会返回一个 page fault，对于这个 page fault，操作系统可以更新 page table 并再次尝试指令。通过操纵 page table，在运行时有各种各样可以做的事情。我们在之后有一节课专门会讲，当出现 page fault 的时候，操作系统可以做哪些有意思的事情。现在只需要记住，page table 是一个无比强大的机制，它为操作系统提供了非常大的灵活性。这就是为什么 page table 如此流行的一个原因。</p>
+<h3 id="Kernel-Page-Table"><a href="#Kernel-Page-Table" class="headerlink" title="Kernel Page Table"></a>Kernel Page Table</h3><p>接下来，我们看一下在 XV6 中，page table 是如何工作的？首先我们来看一下 kernel page 的分布。下图就是内核中地址的对应关系，左边是内核的虚拟地址空间，右边上半部分是物理内存或者说是DRAM，右边下半部分是 I&#x2F;O 设备。接下来我会首先介绍右半部分，然后再介绍左半部分。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005631204.png" alt="image-20220227005631204"></p>
+<p>图中的右半部分的结构完全由硬件设计者决定。如你们上节课看到的一样，当操作系统启动时，会从地址 <code>0x80000000</code> 开始运行，这个地址其实也是由硬件设计者决定的。具体的来说，如果你们看一个主板，中间是 RISC-V 处理器，我们现在知道了处理器中有 4个核，每个核都有自己的 MMU 和 TLB。处理器旁边就是 DRAM 芯片。主板的设计人员决定了，在完成了虚拟到物理地址的翻译之后，如果得到的物理地址大于 <code>0x80000000</code> 会走向 DRAM 芯片，如果得到的物理地址低于 <code>0x80000000</code> 会走向不同的 I&#x2F;O 设备。这是由这个主板的设计人员决定的物理结构。如果你想要查看这里的物理结构，你可以阅读主板的手册，手册中会一一介绍物理地址对应关系。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005719186.png" alt="img"></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005730721.png" alt="img"></p>
+<p>首先，地址 0 是保留的，地址 <code>0x10090000</code> 对应以太网，地址 <code>0x80000000</code> 对应 DDR 内存，处理器外的易失存储（Off-Chip Volatile Memory），也就是主板上的 DRAM 芯片。所以，在你们的脑海里应该要记住这张主板的图片，即使我们接下来会基于你们都知道的 C 语言程序—QEMU 来做介绍，但是最终所有的事情都是由主板硬件决定的。</p>
+<blockquote>
+<p>学生提问：当你说这里是由硬件决定的，硬件是特指 CPU 还是说 CPU 所在的主板？</p>
+<p>Frans教授：CPU所在的主板，CPU 只是主板的一小部分，DRAM 芯片位于处理器之外。是主板设计者将处理器，DRAM 和许多 I&#x2F;O 设备汇总在一起。对于一个操作系统来说，CPU 只是一个部分，I&#x2F;O 设备同样也很重要。所以当你在写一个操作系统时，你需要同时处理 CPU 和 I&#x2F;O 设备，比如你需要向互联网发送一个报文，操作系统需要调用网卡驱动和网卡来实际完成这个工作。</p>
+</blockquote>
+<p>回到最初那张图的右侧：物理地址的分布。可以看到最下面是未被使用的地址，这与主板文档内容是一致的（地址为0）。<strong>地址 <code>0x1000</code> 是 boot ROM 的物理地址，当你对主板上电，主板做的第一件事情就是运行存储在 boot ROM 中的代码，当 boot 完成之后，会跳转到地址 <code>0x80000000</code>，操作系统需要确保那个地址有一些数据能够接着启动操作系统。</strong></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005839429.png" alt="img"></p>
+<p>这里还有一些其他的 I&#x2F;O 设备：</p>
+<ul>
+<li>PLIC 是中断控制器（Platform-Level Interrupt Controller）我们下周的课会讲。</li>
+<li>CLINT（Core Local Interruptor）也是中断的一部分。所以多个设备都能产生中断，需要中断控制器来将这些中断路由到合适的处理函数。</li>
+<li>UART（Universal Asynchronous Receiver&#x2F;Transmitter）负责与 console 和显示器交互。</li>
+<li>VIRTIO disk，与磁盘进行交互。</li>
+</ul>
+<p>地址 <code>0x02000000</code> 对应CLINT，当你向这个地址执行读写指令，你是向实现了 CLINT 的芯片执行读写。<strong>这里你可以认为你直接在与设备交互，而不是读写物理内存。</strong></p>
+<blockquote>
+<p>学生提问：确认一下，低于 <code>0x80000000</code> 的物理地址，不存在于 DRAM 中，当我们在使用这些地址的时候，指令会直接走向其他的硬件，对吗？</p>
+<p>Frans教授：是的。高于 <code>0x80000000</code> 的物理地址对应 DRAM 芯片，但是对于例如以太网接口，也有一个特定的低于 <code>0x80000000</code> 的物理地址，我们可以对这个叫做内存映射I&#x2F;O（Memory-mapped I&#x2F;O）的地址执行读写指令，来完成设备的操作。</p>
+<p> 学生提问：为什么物理地址最上面一大块标为未被使用？</p>
+<p>Frans教授：物理地址总共有 $2^{56}$ 那么多，但是你不用在主板上接入那么多的内存。所以不论主板上有多少 DRAM 芯片，总是会有一部分物理地址没有被用到。实际上在 XV6 中，我们限制了内存的大小是 128MB。</p>
+<p>学生提问：当读指令从CPU发出后，它是怎么路由到正确的 I&#x2F;O 设备的？比如说，当 CPU 要发出指令时，它可以发现现在地址是低于 <code>0x80000000</code>，但是它怎么将指令送到正确的I&#x2F;O设备？</p>
+<p>Frans教授：你可以认为在 RISC-V 中有一个多路输出选择器（demultiplexer）。</p>
+</blockquote>
+<p>接下来我会切换到第一张图的左边，这就是 XV6 的虚拟内存地址空间。当机器刚刚启动时，还没有可用的 page，XV6 操作系统会设置好内核使用的虚拟地址空间，也就是这张图左边的地址分布。</p>
+<p>因为我们想让 XV6 尽可能的简单易懂，所以这里的虚拟地址到物理地址的映射，大部分是相等的关系。比如说内核会按照这种方式设置 page table，虚拟地址 <code>0x02000000</code> 对应物理地址 <code>0x02000000</code>。这意味着左侧低于 PHYSTOP 的虚拟地址，与右侧使用的物理地址是一样的。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010008879.png" alt="img"></p>
+<p>所以，这里的箭头都是水平的，因为这里是完全相等的映射。除此之外，这里还有两件重要的事情：</p>
+<p>第一件事情是，有一些 page 在虚拟内存中的地址很靠后，比如 kernel stack 在虚拟内存中的地址就很靠后。这是因为在它之下有一个未被映射的 Guard page，这个 Guard page 对应的 PTE 的 Valid 标志位没有设置，这样，如果 kernel stack 耗尽了，它会溢出到 Guard page，但是因为 Guard page 的 PTE 中 Valid 标志位未设置，会导致立即触发 page fault，这样的结果好过内存越界之后造成的数据混乱。立即触发一个 panic（也就是 page fault），你就知道 kernel stack 出错了。同时我们也又不想浪费物理内存给 Guard page，所以 Guard page 不会映射到任何物理内存，它只是占据了虚拟地址空间的一段靠后的地址。</p>
+<p>同时，kernel stack 被映射了两次，在靠后的虚拟地址映射了一次，在 PHYSTOP 下的 Kernel data 中又映射了一次，但是实际使用的时候用的是上面的部分，因为有 Guard page 会更加安全。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010120813.png" alt="img"></p>
+<p>这是众多你可以通过 page table 实现的有意思的事情之一。你可以<strong>向同一个物理地址映射两个虚拟地址</strong>，你可以不将一个虚拟地址映射到物理地址。可以是一对一的映射，一对多映射，多对一映射。XV6至少在1-2个地方用到类似的技巧。这的 kernel stack 和 Guard page 就是 XV6 基于 page table 使用的有趣技巧的一个例子。</p>
+<p>第二件事情是权限。例如 Kernel text page 被标位 R-X，意味着你可以读它，也可以在这个地址段执行指令，但是你不能向 Kernel text 写数据。通过设置权限我们可以尽早的发现 Bug 从而避免 Bug。对于Kernel data 需要能被写入，所以它的标志位是 RW-，但是你不能在这个地址段运行指令，所以它的 X标志位未被设置。（注，所以，kernel text 用来存代码，代码可以读，可以运行，但是不能篡改，kernel data 用来存数据，数据可以读写，但是不能通过数据伪装代码在 kernel 中运行）</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010213494.png" alt="img"></p>
+<blockquote>
+<p>学生提问：对于不同的进程会有不同的 kernel stack 吗？</p>
+<p>Frans：答案是的，<strong>每一个用户进程都有一个对应的 kernel stack</strong>。</p>
+<p>学生提问：用户程序的虚拟内存会映射到未使用的物理地址空间吗？</p>
+<p>Frans教授：在 kernel page table 中，有一段 Free Memory，它对应了物理内存中的一段地址。</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010304924.png" alt="img"></p>
+<blockquote>
+<p><strong>XV6 使用这段 free memory 来存放用户进程的 page table，text 和 data。如果我们运行了非常多的用户进程，某个时间点我们会耗尽这段内存，这个时候 fork 或者 exec 会返回错误。</strong></p>
+<p>同一个学生提问：这就意味着，用户进程的虚拟地址空间会比内核的虚拟地址空间小的多，是吗？</p>
+<p>Frans教授：本质上来说，两边的虚拟地址空间大小是一样的。但是用户进程的虚拟地址空间使用率会更低。</p>
+<p>学生提问：如果多个进程都将内存映射到了同一个物理位置，这里会优化合并到同一个地址吗？</p>
+<p>Frans教授：XV6 不会做这样的事情，但是 page table 实验中有一部分就是做这个事情。真正的操作系统会做这样的工作。当你们完成了 page table 实验，你们就会对这些内容更加了解。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：每个进程都会有自己的 3级树状 page table，通过这个 page table 将虚拟地址翻译成物理地址。所以看起来当我们将内核虚拟地址翻译成物理地址时，我们并不需要 kernel 的 page table，因为进程会使用自己的树状 page table 并完成地址翻译（注，不太理解这个问题点在哪）。</p>
+<p>Frans教授：当 kernel 创建了一个进程，针对这个进程的 page table 也会从 Free memory 中分配出来。内核会为用户进程的 page table 分配几个 page，并填入 PTE。在某个时间点，当内核运行了这个进程，内核会将进程的根 page table 的地址加载到 SATP 中。从那个时间点开始，处理器会使用内核为那个进程构建的虚拟地址空间。</p>
+<p>同一个学生提问：所以内核为进程放弃了一些自己的内存，但是进程的虚拟地址空间理论上与内核的虚拟地址空间一样大，虽然实际中肯定不会这么大。</p>
+<p>Frans教授：是的，下图是用户进程的虚拟地址空间分布，与内核地址空间一样，它也是从0到MAXVA。</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010526643.png" alt="img"></p>
+<blockquote>
+<p>它有由内核设置好的，专属于进程的 page table 来完成地址翻译。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：但是我们不能将所有的 MAXVA 地址都使用吧？</p>
+<p>Frans教授：是的我们不能，这样我们会耗尽内存。大多数的进程使用的内存都远远小于虚拟地址空间。</p>
+</blockquote>
+<h3 id="kvminit-函数"><a href="#kvminit-函数" class="headerlink" title="kvminit 函数"></a>kvminit 函数</h3><p>首先，我们来做一个的常规操作，启动我们的 XV6，这里 QEMU 实现了主板，同时我们打开 gdb。</p>
+<p>上一次我们看了 boot 的流程，我们跟到了 main 函数。main 函数中调用的一个函数是 <code>kvminit</code>（3.9），这个函数会<strong>设置好 kernel 的地址空间</strong>。<code>kvminit</code> 的代码如下图所示：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012453315.png" alt="img"></p>
+<p>我们在前一部分看了 kernel 的地址空间长成什么样，这里我们来看一下代码是如何将它设置好的。首先在 kvminit 中设置一个断点，之后运行代码到断点位置。在 gdb 中执行 layout split，可以看到（从上面的代码也可以看出）函数的第一步是为最高一级 page directory 分配物理 page（注，调用 kalloc就是分配物理 page），下一行将这段内存初始化为 0。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012535095.png" alt="img"></p>
+<p>之后，通过 kvmmap 函数，将每一个 I&#x2F;O 设备映射到内核。例如，下图中高亮的行将 UART0 映射到内核的地址空间。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012614622.png" alt="img"></p>
+<p>我们可以查看一个文件叫做 <code>memlayout.h</code>，它将4.5中的文档翻译成了一堆常量。在这个文件里面可以看到，UART0 对应了地址 <code>0x10000000</code>（注，4.5中的文档是真正 SiFive RISC-V 的文档，而下图是 QEMU 的地址，所以4.5中的文档地址与这里的不符）。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012702699.png" alt="img"></p>
+<p>通过 <code>kvmmap</code> 可以将物理地址映射到相同的虚拟地址（注，因为 kvmmap 的前两个参数一致）。</p>
+<p>在 page table 实验中，第一个练习是实现 vmprint，这个函数会打印当前的 kernel page table。我们现在跳过这个函数，看一下执行完第一个 kvmmap 时的 kernel page table。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012745337.png" alt="img"></p>
+<p>我们来看一下这里的输出。第一行是最高一级 page directory 的地址，这就是存在 SATP 或者将会存在 SATP 中的地址。第二行可以看到最高一级 page directory 只有一条 PTE 序号为0，它包含了中间级 page directory 的物理地址。第三行可以看到中间级的 page directory 只有一条 PTE 序号为128，它指向了最低级 page directory 的物理地址。第四行可以看到最低级的 page directory 包含了 PTE 指向物理地址。你们可以看到最低一级 page directory 中 PTE 的物理地址就是 <code>0x10000000</code>，对应了 UART0。</p>
+<p>前面是物理地址，我们可以从虚拟地址的角度来验证这里符合预期。我们将地址 <code>0x10000000</code> 向右移位 12bit，这样可以得到虚拟地址的高 27bit（index 部分）。之后我们再对这部分右移位 9bit，并打印成 10进制数，可以得到 128，这就是中间级 page directory 中 PTE 的序号。这与之前（4.4）介绍的内容是符合的。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012925232.png" alt="img"></p>
+<p>从标志位来看（fl 部分），最低一级 page directory 中的 PTE 有读写标志位，并且 Valid 标志位也设置了（4.3底部有标志位的介绍）。</p>
+<p><strong>内核会持续的按照这种方式，调用 kvmmap 来设置地址空间。之后会对 VIRTIO0、CLINT、PLIC、kernel text、kernel data、最后是 TRAMPOLINE 进行地址映射。</strong>最后我们还会调用 vmprint 打印完整的 kernel page directory，可以看出已经设置了很多 PTE。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220303100606521.png" alt="image-20220303100606521"></p>
+<p>这里就不过细节了，但是这些 PTE 构成了我们在 4.5 中看到的地址空间对应关系。</p>
+<blockquote>
+<p>学生：下面这两行内存不会越界吗？</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220303100546908.png" alt="image-20220303100546908"></p>
+<blockquote>
+<p>Frans：不会，这里 KERNBASE 是 <code>0x80000000</code>，这是内存开始的地址。kvmmap 的第三个参数是 size，etext 是 kernel text 的最后一个地址，etext - KERNBASE 会返回 kernel text 的字节数，我不确定这块有多大，大概是 60 - 90 个 page，这部分是 kernel 的 text 部分。PHYSTOP 是物理内存的最大位置，PHYSTOP - text 是 kernel 的 data 部分。会有足够的 DRAM 来完成这里的映射。</p>
+</blockquote>
+<h3 id="kvminithart-函数"><a href="#kvminithart-函数" class="headerlink" title="kvminithart 函数"></a>kvminithart 函数</h3><p>之后，kvminit 函数返回了，在 main 函数中，我们运行到了 kvminithart 函数。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013114725.png" alt="img"></p>
+<p>这个函数首先设置了 SATP 寄存器，<code>kernel_pagetable</code> 变量来自于 kvminit 第一行。所以这里实际上是内核告诉 MMU 来使用刚刚设置好的 page table。当这里这条指令执行之后，下一个指令的地址会发生什么？</p>
+<p>在这条指令之前，还不存在可用的 page table，所以也就不存在地址翻译。执行完这条指令之后，程序计数器（Program Counter）增加了 4。<strong>而之后的下一条指令被执行时，程序计数器会被内存中的 page table 翻译。</strong></p>
+<p>所以这条指令的执行时刻是一个非常重要的时刻。因为整个地址翻译从这条指令之后开始生效，之后的每一个使用的内存地址都可能对应到与之不同的物理内存地址。因为在这条指令之前，我们使用的都是物理内存地址，这条指令之后 page table 开始生效，所有的内存地址都变成了另一个含义，也就是虚拟内存地址。</p>
+<p>这里能正常工作的原因是值得注意的。因为前一条指令还是在物理内存中，而后一条指令已经在虚拟内存中了。比如，下一条指令地址是 <code>0x80001110</code> 就是一个虚拟内存地址。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013151324.png" alt="img"></p>
+<p><strong>为什么这里能正常工作呢？因为 kernel page 的映射关系中，虚拟地址到物理地址是完全相等的。所以，在我们打开虚拟地址翻译硬件之后，地址翻译硬件会将一个虚拟地址翻译到相同的物理地址。所以实际上，我们最终还是能通过内存地址执行到正确的指令，因为经过地址翻译 <code>0x80001110</code> 还是对应 <code>0x80001110</code>。</strong></p>
+<p>管理虚拟内存的一个难点是，一旦执行了类似于 SATP 这样的指令，你相当于将一个 page table 加载到了 SATP 寄存器，你的世界完全改变了。现在每一个地址都会被你设置好的 page table 所翻译。那么假设你的 page table 设置错误了，会发生什么呢？有人想回答这个问题吗？</p>
+<blockquote>
+<p>学生A回答：你可能会覆盖 kernel data。   </p>
+<p>学生B回答：会产生 page fault。</p>
+</blockquote>
+<p>是的，因为 page table 没有设置好，虚拟地址可能根本就翻译不了，那么内核会停止运行并 panic。所以，如果 page table 中有 bug，你将会看到奇怪的错误和崩溃，这导致了 page table 实验将会比较难。如果你不够小心，或者你没有完全理解一些细节，你可能会导致 kernel 崩溃，这将会花费一些时间和精力来追踪背后的原因。但这就是管理虚拟内存的一部分，因为对于一个这么强大的工具，如果出错了，相应的你也会得到严重的后果。我并不是要给你们泼凉水，哈哈。另一方面，这也很有乐趣，经过了 page table 实验，你们会真正理解虚拟内存是什么，虚拟内存能做什么。</p>
+<h3 id="walk-函数"><a href="#walk-函数" class="headerlink" title="walk 函数"></a>walk 函数</h3><blockquote>
+<p>学生提问：我对于 walk 函数有个问题，从代码看它返回了最高级 page table 的 PTE，但是它是怎么工作的呢？（注，应该是学生理解有误，walk 函数模拟了 MMU，返回的是 va 对应的最低级 page table 的 PTE）</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013346242.png" alt="img"></p>
+<blockquote>
+<p>Frans教授：这个函数会返回 page table 的 PTE，而内核可以读写 PTE。我来画个图，首先我们有一个 page directory，这个 page directory 有 512 个 PTE，最下面是 0，最上面是 511。</p>
+</blockquote>
+<blockquote>
+<p>这个函数的作用是返回某一个 PTE 的指针。</p>
+<p>这是个虚拟地址，它指向了这个 PTE。之后内核可以通过向这个地址写数据来操纵这条 PTE 执行的物理 page。当 page table 被加载到 SATP 寄存器，这里的更改就会生效。</p>
+<p>从代码看，这个函数从 L2 走到 L1 然后到 L0，如果参数 alloc 不为 0，且某一个 level 的 page table 不存在，这个函数会创建一个临时的 page table，将内容初始化为 0，并继续运行。所以最后总是返回的是最低一级的 page directory 的 PTE。</p>
+<p>如果参数 alloc 没有设置，那么在第一个 PTE 对应的下一级 page table 不存在时就会返回。</p>
+<p>学生提问：对于 walk 函数，我有一个比较困惑的地方，在写完 SATP 寄存器之后，内核还能直接访问物理地址吗？在代码里面看起来像是通过 page table 将虚拟地址翻译成了物理地址，但是这个时候 SATP 已经被设置了，得到的物理地址不会被认为是虚拟地址吗？</p>
+<p>Frans教授：让我们来看 <code>kvminithart</code> 函数，这里的 <code>kernel_page_table</code> 是一个物理地址，并写入到 SATP 寄存器中。从那以后，我们的代码运行在一个我们构建出来的地址空间中。在之前的 kvminit 函数中，kvmmap 会对每个地址或者每个 page 调用 walk 函数。所以你的问题是什么？</p>
+<p>学生：我想知道，在 SATP 寄存器设置完之后，walk 是不是还是按照相同的方式工作？</p>
+<p>Frans：是的。它还能工作的原因是，内核设置了虚拟地址等于物理地址的映射关系，这里很重要，因为很多地方能工作的原因都是因为内核设置的地址映射关系是相同的。</p>
+<p>学生：每一个进程的 SATP 寄存器存在哪？</p>
+<p>Frans：每个 CPU 核只有一个 SATP 寄存器，但是在每个 proc 结构体，如果你查看 <code>proc.h</code>，里面有一个指向 page table 的指针，这对应了进程的根 page table 物理内存地址。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/[object%20Object]/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/1.jpg">
+      <meta itemprop="name" content="Sam Shen">
+      <meta itemprop="description" content="share cs knowledge">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AcKing">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch5<i class="fa fa-external-link-alt"></i></a>
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:17:22" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081-os/" itemprop="url" rel="index"><span itemprop="name">mit6.s081 os</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Chapter-5"><a href="#Chapter-5" class="headerlink" title="Chapter 5"></a>Chapter 5</h1><h3 id="GDB-和汇编代码执行"><a href="#GDB-和汇编代码执行" class="headerlink" title="GDB 和汇编代码执行"></a>GDB 和汇编代码执行</h3><p>接下来我们来看一些真实的汇编代码：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228010120267.png" alt="img"></p>
+<p>图中的代码，上半部分的注释是对应的 C 代码，这是个简单的函数，它累加了从 1 到 n 的所有数字，并返回结果。下半部分是可以编译出的最简单的汇编代码。如果你在自己的计算机编写同样的 C 代码并编译，你得到的极有可能是差别较大的汇编代码。这里有很多原因，有一些原因我们之后会讲，有一些原因是因为编译器。当将 C 代码编译成汇编代码时，现代的编译器会执行各种各样的优化，所以你们自己编译得到的汇编代码可能看起来是不一样的。例如，当你在 gdb 中做 debug 的时候，有时候你会看到 gdb 提示你说某些变量被优化掉了，这意味着编译器决定了自己不再需要那个变量，变量以及相关的信息会在某个时间点删掉。</p>
+<p>上图中的代码都很直观，首先将寄存器 <code>a0</code> 中的值保存在寄存器 <code>t0</code> 中。之后将寄存器 <code>a0</code> 设置为 0，之后在每个循环中将 t0 中的数据加到 a0 中，直到 t0 变成 0。这就是代码的所有内容。</p>
+<blockquote>
+<p>学生提问：这里面 .secion，.global，.text 分别是什么意思？</p>
+<p>TA：global 表示你可以在其他文件中调用这个函数。text 表明这里的是代码，如果你还记得 XV6 中的图3.4，</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228010214854.png" alt="img"></p>
+<blockquote>
+<p>每个进程的 page table 中有一个区域是 text，汇编代码中的 text 表明这部分是代码，并且位于 page table 的 text 区域中，text 中保存的就是代码。</p>
+</blockquote>
+<p>如果你对内核比较感兴趣，在编译完之后，你可以查看 <code>kernel.asm</code> 文件，你可以看到 XV6 完整内核的汇编版本。文件中每一行左边的数字表明的是这条指令会在内存中的哪个位置，这个信息非常有用。在汇编代码中还可以看到函数对应的 label，以及它们是在哪里定义的。这些信息在我们调试代码的时候可能会非常非常有用，我稍后会展示这部分。</p>
+<blockquote>
+<p>学生提问：<code>.asm</code> 文件和 <code>.s</code> 文件有什么区别？</p>
+<p>TA：我并不是百分百确定。<strong>这两类文件都是汇编代码，<code>.asm</code> 文件中包含大量额外的标注，而 <code>.s</code> 文件中没有</strong>。所以通常来说当你编译你的C代码，你得到的是 <code>.s</code> 文件。如果你好奇我们是如何得到 <code>.asm</code> 文件，makefile 里面包含了具体的步骤。</p>
+</blockquote>
+<p>现在回到函数 <code>sum_to</code>，我们看一下如何在 gdb 中检查这个函数。首先是要启动 QEMU，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014220124.png" alt="img"></p>
+<p>在另一个窗口打开 gdb，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014236718.png" alt="img"></p>
+<p>gdb 中输入 <code>tui enable</code> 可以打开源代码展示窗口。</p>
+<p><code>sum_to</code> 的代码现在都位于内核中，我在 <code>sum_to</code> 中设置一个断点。然后继续代码的执行，代码在断点处停住。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014316761.png" alt="img"></p>
+<p>gdb 窗口的左上角是程序计数器，我们可以看到当前的值是 <code>0x800065e2</code>。如果我们去 <code>kernel.asm</code>中，查找这个地址，我们可以看到这个地址就是 <code>sum_to</code> 函数的起始地址。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014331612.png" alt="img"></p>
+<p>如果代码出现了问题，在 gdb 中看到的地址，你可以直接在 <code>kernel.asm</code> 找到具体的行，分析问题的原因，然后再向相应的地址设置断点。</p>
+<p>在 gdb 中输入 <code>layout asm</code>，可以在 tui 窗口看到所有的汇编指令。再输入 <code>layout reg</code> 可以看到所有的寄存器信息。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014407718.png" alt="img"></p>
+<p>在寄存器窗口，可以看到 t0，a0 寄存器的值。在执行完一条汇编指令之后，<code>t0</code> 寄存器拥有了 <code>a0</code> 寄存器的内容，也就是 5。在寄存器窗口，更新了的寄存器会被高亮出来。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014450069.png" alt="img"></p>
+<p>之后持续的单步执行代码，直到函数返回。</p>
+<p><strong>如果你关心你设置了哪些断点，或着你跟踪代码的时候迷糊了，</strong>你可以在 gdb 中输入 <code>info breakpoints</code> ，你可以看到所有设置了的断点。你甚至可以看到这个断点已经被命中了几次。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014608402.png" alt="img"></p>
+<p>类似的，你也可以通过输入 <code>info reg</code> 查看<strong>寄存器</strong>的信息。</p>
+<blockquote>
+<p>学生提问：为什么这里展示的是汇编代码而不是 C 代码？</p>
+<p>TA：从最初的代码可以看出，这里的程序完全是汇编代码实现的，所以自然也没有关联的 C 程序。如果我将断点设置在 C 代码中，在命中断点之后输入 <code>layout split</code> 或者 <code>layout source</code>，就可以看到相应的 C 代码了。<code>layout split</code>  会同时展现C代码和汇编，而 <code>layout source</code> 只会展示C代码。</p>
+<p>学生提问：在C代码中，断点设置在某一行，如果这一行有多个语句的话，断点会设置在哪个语句？</p>
+<p>TA：断点会设置在第一个语句。</p>
+</blockquote>
+<h3 id="RISC-V-寄存器"><a href="#RISC-V-寄存器" class="headerlink" title="RISC-V 寄存器"></a>RISC-V 寄存器</h3><p>我们之前看过了汇编语言和 RISC-V 的介绍，接下来我们看一下之后 lab 相关的内容。这部分的内容其实就是本节课的<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2020/readings/riscv-calling.pdf">准备材料</a>中的内容。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014718657.png" alt="img"></p>
+<p>你们现在对于这个表达应该都很熟悉了，这个表里面是 <code>RISC-V 的寄存器</code>。寄存器是 CPU 或者处理器上，预先定义的可以用来存储数据的位置。寄存器之所以重要是因为汇编代码并不是在内存上执行，而是在寄存器上执行，也就是说，当我们在做 <code>add，sub</code> 时，我们是对寄存器进行操作。所以你们通常看到的汇编代码中的模式是，我们通过load将数据存放在寄存器中，这里的数据源可以是来自内存，也可以来自另一个寄存器。之后我们在寄存器上执行一些操作。如果我们对操作的结果关心的话，我们会将操作的结果存储在某个地方。这里的目的地可能是内存中的某个地址，也可能是另一个寄存器。这就是通常使用寄存器的方法。</p>
+<p>寄存器是用来进行任何运算和数据读取的最快的方式，这就是为什么使用它们很重要，也是为什么我们更喜欢使用寄存器而不是内存。当我们调用函数时，你可以看到这里有a0 - a7寄存器。通常我们在谈到寄存器的时候，我们会用它们的ABI名字。不仅是因为这样描述更清晰和标准，同时也因为在写汇编代码的时候使用的也是ABI名字。第一列中的寄存器名字并不是超级重要，它唯一重要的场景是在 RISC-V 的 Compressed Instruction 中。基本上来说，RISC-V 中通常的指令是 64bit，但是在 Compressed Instruction 中指令是16bit。在 Compressed Instruction 中我们使用更少的寄存器，也就是 x8 - x15 寄存器。我猜你们可能会有疑问，为什么 s1 寄存器和其他的s寄存器是分开的，因为 s1 在Compressed Instruction 是有效的，而 s2-s11 却不是。除了 Compressed Instruction，寄存器都是通过它们的 ABI 名字来引用。</p>
+<p>a0 到 a7 寄存器是用来作为函数的参数。如果一个函数有超过 8个参数，我们就需要用内存了。从这里也可以看出，当可以使用寄存器的时候，我们不会使用内存，我们只在不得不使用内存的场景才使用它。</p>
+<p>表单中的第4列，Saver列，当我们在讨论寄存器的时候也非常重要。</p>
+<p>它有两个可能的值Caller，Callee。我经常混淆这两个值，因为它们只差一个字母，我发现最简单的记住它们的方法是：</p>
+<ul>
+<li>Caller Saved寄存器在函数调用的时候不会保存</li>
+<li>Callee Saved寄存器在函数调用的时候会保存</li>
+</ul>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020134831.png" alt="img"></p>
+<p><strong>这里的意思是，一个Caller Saved寄存器可能被其他函数重写</strong>。假设我们在函数a中调用函数b，任何被函数a使用的并且是Caller Saved寄存器，调用函数b可能重写这些寄存器。我认为一个比较好的例子就是Return address寄存器（注，保存的是函数返回的地址），你可以看到ra寄存器是Caller Saved，这一点很重要，它导致了当函数a调用函数b的时侯，b会重写Return address。所以基本上来说，任何一个Caller Saved寄存器，作为调用方的函数要小心可能的数据可能的变化；任何一个Callee Saved寄存器，作为被调用方的函数要小心寄存器的值不会相应的变化。我经常会弄混这两者的区别，然后会到这张表来回顾它们。</p>
+<p>如果你们还记得的话，所有的寄存器都是 64bit，各种各样的数据类型都会被改造的可以放进这 64bit 中。比如说我们有一个 32bit 的整数，取决于整数是不是有符号的，会通过在前面补 32 个 0 或者 1 来使得这个整数变成 64bit 并存在这些寄存器中。</p>
+<blockquote>
+<p>学生提问：返回值可以放在 a1 寄存器吗？</p>
+<p>TA：这是个好问题。我认为理论上是可以的，如果一个函数的返回值是long long型，也就是128bit，我们可以把它放到一对寄存器中。这也同样适用于函数的参数。所以，如果返回值超过了一个寄存器的长度，也就是64bit，我们可以将返回值保存在a0和a1。但是如果你只将返回值放在a1寄存器，我认为会出错。</p>
+<p>学生提问：除了 Stack Pointer 和 Frame Pointer，我不认为我们需要更多的Callee Saved寄存器。</p>
+<p>TA：s0 - s11都是Callee寄存器，我认为它们是提供给编译器而不是程序员使用。在一些特定的场景下，你会想要确保一些数据在函数调用之后仍然能够保存，这个时候编译器可以选择使用s寄存器。</p>
+</blockquote>
+<h3 id="Stack"><a href="#Stack" class="headerlink" title="Stack"></a>Stack</h3><p>接下来我们讨论一下栈。栈之所以很重要的原因是，它使得我们的函数变得有组织，且能够正常返回。</p>
+<p>下面是一个非常简单的栈的结构图，其中每一个区域都是一个 <strong>Stack Frame，每执行一次函数调用就会产生一个Stack Frame。</strong></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020408160.png" alt="img"></p>
+<p>每一次我们调用一个函数，函数都会为自己创建一个Stack Frame，并且只给自己用。函数通过移动 Stack Pointer 来完成 Stack Frame 的空间分配。</p>
+<p>对于 Stack 来说，是从高地址开始向低地址使用。所以栈总是向下增长。当我们想要创建一个新的 Stack Frame 的时候，总是对当前的 Stack Pointer 做减法。一个函数的 Stack Frame 包含了保存的寄存器，本地变量，并且，如果函数的参数多于8个，额外的参数会出现在 Stack 中。所以 Stack Frame 大小并不总是一样，即使在这个图里面看起来是一样大的。不同的函数有不同数量的本地变量，不同的寄存器，所以 Stack Frame 的大小是不一样的。但是有关 Stack Frame 有两件事情是确定的：</p>
+<ul>
+<li><strong>Return address 总是会出现在 Stack Frame 的第一位</strong></li>
+<li><strong>指向前一个 Stack Frame 的指针也会出现在栈中的固定位置</strong></li>
+</ul>
+<p>有关 Stack Frame 中有两个重要的寄存器，第一个是 SP（Stack Pointer），它指向 Stack 的底部并代表了当前 Stack Frame 的位置。第二个是 FP（Frame Pointer），它指向当前 Stack Frame 的顶部。因为 Return address 和指向前一个 Stack Frame 的指针都在当前Stack Frame的固定位置，所以可以通过当前的FP寄存器寻址到这两个数据。</p>
+<p>我们保存前一个Stack Frame的指针的原因是为了让我们能跳转回去。所以当前函数返回时，我们可以将前一个Frame Pointer存储到FP寄存器中。所以我们使用Frame Pointer来操纵我们的Stack Frames，并确保我们总是指向正确的函数。</p>
+<p>Stack Frame 必须要被汇编代码创建，所以是<strong>编译器生成了汇编代码，进而创建了Stack Frame</strong>。所以通常，在汇编代码中，函数的最开始你们可以看到 Function prologue，之后是函数的本体，最后是Epollgue。这就是一个汇编函数通常的样子。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020624180.png" alt="img"></p>
+<p>我们从汇编代码中来看一下这里的操作。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020718715.png" alt="img"></p>
+<p>在我们之前的 sum_to 函数中，只有函数主体，并没有 Stack Frame 的内容。它这里能正常工作的原因是它足够简单，并且它是一个 leaf 函数。leaf 函数是指不调用别的函数的函数，它的特别之处在于它不用担心保存自己的Return address 或者任何其他的Caller Saved寄存器，因为它不会调用别的函数。</p>
+<p>而另一个函数 sum_then_double 就不是一个leaf函数了，这里你可以看到它调用了sum_to。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020920984.png" alt="img"></p>
+<p>所以在这个函数中，需要包含 prologue。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021006444.png" alt="img"></p>
+<p>这里我们对Stack Pointer减16，这样我们为新的 Stack Frame 创建了16字节的空间。之后我们将 Return address 保存在 Stack Pointer 位置。</p>
+<p>之后就是调用 sum_to 并对结果乘以2，最后是 Epllogue，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021159511.png" alt="image-20220228021159511"></p>
+<p>这里首先将 Return address 加载回 ra 寄存器，通过对 Stack Pointer 加 16 来删除刚刚创建的 Stack Frame，最后 ret 从函数中退出。</p>
+<p>这里我替大家问一个问题，如果我们删除掉Prologue和Epllogue，然后只剩下函数主体会发生什么？有人可以猜一下吗？</p>
+<blockquote>
+<p>学生回答：sum_then_double将不知道它应该返回的Return address。所以调用sum_to的时候，Return address被覆盖了，最终sum_to函数不能返回到它原本的调用位置。</p>
+</blockquote>
+<p>是的，完全正确，我们可以看一下具体会发生什么。先在修改过的sum_then_double设置断点，然后执行sum_then_double。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021659428.png" alt="img"></p>
+<p>我们可以看到现在的ra寄存器是 0x80006392，它指向demo2函数，也就是sum_then_double的调用函数。之后我们执行代码，调用了sum_to。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021649880.png" alt="img"></p>
+<p>我们可以看到ra寄存器的值被 sum_to重写成了0x800065f4，指向sum_then_double，这也合理，符合我们的预期。我们在函数sum_then_double中调用了sum_to，那么sum_to就应该要返回到sum_then_double。</p>
+<p>之后执行代码直到sum_then_double返回。如前面那位同学说的，因为没有恢复sum_then_double自己的Return address，现在的Return address仍然是sum_to对应的值，现在我们就会进入到一个无限循环中。</p>
+<p>我认为这是一个很好的例子用来展示为什么跟踪Caller和Callee寄存器是重要的。</p>
+<p>接下来我们来看一些C代码。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021640522.png" alt="img"></p>
+<p>demo4函数里面调用了dummymain函数。我们在dummymain函数中设置一个断点，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021631418.png" alt="img"></p>
+<p>现在我们在dummymain函数中。如果我们在gdb中输入info frame，可以看到有关当前Stack Frame许多有用的信息。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090107324.png" alt="image-20220228090107324"></p>
+<ul>
+<li>Stack level 0，表明这是调用栈的最底层</li>
+<li>pc，当前的程序计数器</li>
+<li>saved pc，demo4的位置，表明当前函数要返回的位置</li>
+<li>source language c，表明这是C代码</li>
+<li>Arglist at，表明参数的起始地址。当前的参数都在寄存器中，可以看到 argc &#x3D; 3，argv 是一个地址</li>
+</ul>
+<p>如果输入 <code>backtrace</code>（简写bt）可以看到从当前调用栈开始的所有 Stack Frame。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021832784.png" alt="image-20220228021832784"></p>
+<p>如果对某一个Stack Frame感兴趣，可以先定位到那个 frame 再输入 <code>info frame</code>，假设对 syscall 的 Stack Frame 感兴趣。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090128324.png" alt="image-20220228090128324"></p>
+<p>在这个Stack Frame中有更多的信息，有一堆的 Saved Registers，有一些本地变量等等。这些信息对于调试代码来说超级重要。</p>
+<blockquote>
+<p>学生提问：为什么有的时候编译器会优化掉 <code>argc</code> 或者 <code>argv</code> ？这个以前发生过。</p>
+<p>TA：这意味着编译器发现了一种更有效的方法，不使用这些变量，而是通过寄存器来完成所有的操作。如果一个变量不是百分百必要的话，这种优化还是很有常见的。我们并没有给你编译器的控制能力，但是在你们的日常使用中，你可以尝试设置编译器的optimization flag为 0，不过就算这样，编译器也会做某些程度的优化。</p>
+</blockquote>
+<h3 id="Struct"><a href="#Struct" class="headerlink" title="Struct"></a>Struct</h3><p>今天我想讨论的最后一个话题是 struct，stuct 非常重要并且在课程的实验中会经常出现。我会稍微介绍一下 struct 在内存中的结构是怎样。基本上来说，struct 在内存中是一段连续的地址，如果我们有一个 struct，并且有f1，f2，f3三个字段。</p>
+<p>当我们创建这样一个struct时，内存中相应的字段会彼此相邻。你可以认为 struct 像是一个数组，但是里面的不同字段的类型可以不一样。（注，这应该是这一节中最有用的一句话了。。。）</p>
+<p>我们可以将struct作为参数传递给函数。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090154065.png" alt="image-20220228090154065"></p>
+<p>这里有一个名字是Person的struct，它有两个字段。我将这个struct作为参数传递给printPerson并打印相关的信息。我们在printPerson中设置一个断点，当程序运行到函数内部时打印当前的Stack Frame。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090208092.png" alt="img"></p>
+<p>我们可以看到当前函数有一个参数p。打印p可以看到这是struct Person的指针，打印p的反引用可以看到struct的具体内容。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090227304.png" alt="img"></p>
+<blockquote>
+<p>学生提问：是谁创建了编译器来将C代码转换成各种各样的汇编代码，是不同的指令集创建者，还是第三方？</p>
+<p>TA：我认为不是指令集的创建者，通常是第三方创建的。你们常见的两大编译器，一个是 gcc，这是由 GNU 基金会维护的；一个是 llvm，这个是开源的，你可以查到相应的代码。当一个新的指令集，例如 RISC-V，发布之后，我认为会指令集的创建者和编译器的设计者之间会有一些高度合作。简单来说我认为是第三方配合指令集的创建者完成的编译器。RISC-V 或许是个例外，因为它是来自于一个研究项目，相应的团队或许自己写了编译器，但是我不认为 Intel 对于 gcc 或者 llvm 有任何输入。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/[object%20Object]/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/1.jpg">
+      <meta itemprop="name" content="Sam Shen">
+      <meta itemprop="description" content="share cs knowledge">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AcKing">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch8<i class="fa fa-external-link-alt"></i></a>
+          
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:17:29" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -508,7 +1389,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">[object Object]<i class="fa fa-external-link-alt"></i></a>
+            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch6<i class="fa fa-external-link-alt"></i></a>
           
         </h2>
 
@@ -520,7 +1401,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-01-28 20:12:53 / Modified: 20:15:04" itemprop="dateCreated datePublished" datetime="2023-01-28T20:12:53+08:00">2023-01-28</time>
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:17:25" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -905,887 +1786,6 @@
 <li>硬件和软件需要协同工作，你可能需要重新设计 XV6，重新设计 RISC-V 来使得这里的处理流程更加简单，更加快速。</li>
 <li>另一个需要时刻记住的问题是，恶意软件是否能滥用这里的机制来打破隔离性。</li>
 </ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/[object%20Object]/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/uploads/1.jpg">
-      <meta itemprop="name" content="Sam Shen">
-      <meta itemprop="description" content="share cs knowledge">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="AcKing">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">[object Object]<i class="fa fa-external-link-alt"></i></a>
-          
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2023-01-28 20:12:53 / Modified: 20:14:54" itemprop="dateCreated datePublished" datetime="2023-01-28T20:12:53+08:00">2023-01-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mit6-s081-os/" itemprop="url" rel="index"><span itemprop="name">mit6.s081 os</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Chapter-5"><a href="#Chapter-5" class="headerlink" title="Chapter 5"></a>Chapter 5</h1><h3 id="GDB-和汇编代码执行"><a href="#GDB-和汇编代码执行" class="headerlink" title="GDB 和汇编代码执行"></a>GDB 和汇编代码执行</h3><p>接下来我们来看一些真实的汇编代码：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228010120267.png" alt="img"></p>
-<p>图中的代码，上半部分的注释是对应的 C 代码，这是个简单的函数，它累加了从 1 到 n 的所有数字，并返回结果。下半部分是可以编译出的最简单的汇编代码。如果你在自己的计算机编写同样的 C 代码并编译，你得到的极有可能是差别较大的汇编代码。这里有很多原因，有一些原因我们之后会讲，有一些原因是因为编译器。当将 C 代码编译成汇编代码时，现代的编译器会执行各种各样的优化，所以你们自己编译得到的汇编代码可能看起来是不一样的。例如，当你在 gdb 中做 debug 的时候，有时候你会看到 gdb 提示你说某些变量被优化掉了，这意味着编译器决定了自己不再需要那个变量，变量以及相关的信息会在某个时间点删掉。</p>
-<p>上图中的代码都很直观，首先将寄存器 <code>a0</code> 中的值保存在寄存器 <code>t0</code> 中。之后将寄存器 <code>a0</code> 设置为 0，之后在每个循环中将 t0 中的数据加到 a0 中，直到 t0 变成 0。这就是代码的所有内容。</p>
-<blockquote>
-<p>学生提问：这里面 .secion，.global，.text 分别是什么意思？</p>
-<p>TA：global 表示你可以在其他文件中调用这个函数。text 表明这里的是代码，如果你还记得 XV6 中的图3.4，</p>
-</blockquote>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228010214854.png" alt="img"></p>
-<blockquote>
-<p>每个进程的 page table 中有一个区域是 text，汇编代码中的 text 表明这部分是代码，并且位于 page table 的 text 区域中，text 中保存的就是代码。</p>
-</blockquote>
-<p>如果你对内核比较感兴趣，在编译完之后，你可以查看 <code>kernel.asm</code> 文件，你可以看到 XV6 完整内核的汇编版本。文件中每一行左边的数字表明的是这条指令会在内存中的哪个位置，这个信息非常有用。在汇编代码中还可以看到函数对应的 label，以及它们是在哪里定义的。这些信息在我们调试代码的时候可能会非常非常有用，我稍后会展示这部分。</p>
-<blockquote>
-<p>学生提问：<code>.asm</code> 文件和 <code>.s</code> 文件有什么区别？</p>
-<p>TA：我并不是百分百确定。<strong>这两类文件都是汇编代码，<code>.asm</code> 文件中包含大量额外的标注，而 <code>.s</code> 文件中没有</strong>。所以通常来说当你编译你的C代码，你得到的是 <code>.s</code> 文件。如果你好奇我们是如何得到 <code>.asm</code> 文件，makefile 里面包含了具体的步骤。</p>
-</blockquote>
-<p>现在回到函数 <code>sum_to</code>，我们看一下如何在 gdb 中检查这个函数。首先是要启动 QEMU，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014220124.png" alt="img"></p>
-<p>在另一个窗口打开 gdb，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014236718.png" alt="img"></p>
-<p>gdb 中输入 <code>tui enable</code> 可以打开源代码展示窗口。</p>
-<p><code>sum_to</code> 的代码现在都位于内核中，我在 <code>sum_to</code> 中设置一个断点。然后继续代码的执行，代码在断点处停住。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014316761.png" alt="img"></p>
-<p>gdb 窗口的左上角是程序计数器，我们可以看到当前的值是 <code>0x800065e2</code>。如果我们去 <code>kernel.asm</code>中，查找这个地址，我们可以看到这个地址就是 <code>sum_to</code> 函数的起始地址。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014331612.png" alt="img"></p>
-<p>如果代码出现了问题，在 gdb 中看到的地址，你可以直接在 <code>kernel.asm</code> 找到具体的行，分析问题的原因，然后再向相应的地址设置断点。</p>
-<p>在 gdb 中输入 <code>layout asm</code>，可以在 tui 窗口看到所有的汇编指令。再输入 <code>layout reg</code> 可以看到所有的寄存器信息。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014407718.png" alt="img"></p>
-<p>在寄存器窗口，可以看到 t0，a0 寄存器的值。在执行完一条汇编指令之后，<code>t0</code> 寄存器拥有了 <code>a0</code> 寄存器的内容，也就是 5。在寄存器窗口，更新了的寄存器会被高亮出来。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014450069.png" alt="img"></p>
-<p>之后持续的单步执行代码，直到函数返回。</p>
-<p><strong>如果你关心你设置了哪些断点，或着你跟踪代码的时候迷糊了，</strong>你可以在 gdb 中输入 <code>info breakpoints</code> ，你可以看到所有设置了的断点。你甚至可以看到这个断点已经被命中了几次。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014608402.png" alt="img"></p>
-<p>类似的，你也可以通过输入 <code>info reg</code> 查看<strong>寄存器</strong>的信息。</p>
-<blockquote>
-<p>学生提问：为什么这里展示的是汇编代码而不是 C 代码？</p>
-<p>TA：从最初的代码可以看出，这里的程序完全是汇编代码实现的，所以自然也没有关联的 C 程序。如果我将断点设置在 C 代码中，在命中断点之后输入 <code>layout split</code> 或者 <code>layout source</code>，就可以看到相应的 C 代码了。<code>layout split</code>  会同时展现C代码和汇编，而 <code>layout source</code> 只会展示C代码。</p>
-<p>学生提问：在C代码中，断点设置在某一行，如果这一行有多个语句的话，断点会设置在哪个语句？</p>
-<p>TA：断点会设置在第一个语句。</p>
-</blockquote>
-<h3 id="RISC-V-寄存器"><a href="#RISC-V-寄存器" class="headerlink" title="RISC-V 寄存器"></a>RISC-V 寄存器</h3><p>我们之前看过了汇编语言和 RISC-V 的介绍，接下来我们看一下之后 lab 相关的内容。这部分的内容其实就是本节课的<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2020/readings/riscv-calling.pdf">准备材料</a>中的内容。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014718657.png" alt="img"></p>
-<p>你们现在对于这个表达应该都很熟悉了，这个表里面是 <code>RISC-V 的寄存器</code>。寄存器是 CPU 或者处理器上，预先定义的可以用来存储数据的位置。寄存器之所以重要是因为汇编代码并不是在内存上执行，而是在寄存器上执行，也就是说，当我们在做 <code>add，sub</code> 时，我们是对寄存器进行操作。所以你们通常看到的汇编代码中的模式是，我们通过load将数据存放在寄存器中，这里的数据源可以是来自内存，也可以来自另一个寄存器。之后我们在寄存器上执行一些操作。如果我们对操作的结果关心的话，我们会将操作的结果存储在某个地方。这里的目的地可能是内存中的某个地址，也可能是另一个寄存器。这就是通常使用寄存器的方法。</p>
-<p>寄存器是用来进行任何运算和数据读取的最快的方式，这就是为什么使用它们很重要，也是为什么我们更喜欢使用寄存器而不是内存。当我们调用函数时，你可以看到这里有a0 - a7寄存器。通常我们在谈到寄存器的时候，我们会用它们的ABI名字。不仅是因为这样描述更清晰和标准，同时也因为在写汇编代码的时候使用的也是ABI名字。第一列中的寄存器名字并不是超级重要，它唯一重要的场景是在 RISC-V 的 Compressed Instruction 中。基本上来说，RISC-V 中通常的指令是 64bit，但是在 Compressed Instruction 中指令是16bit。在 Compressed Instruction 中我们使用更少的寄存器，也就是 x8 - x15 寄存器。我猜你们可能会有疑问，为什么 s1 寄存器和其他的s寄存器是分开的，因为 s1 在Compressed Instruction 是有效的，而 s2-s11 却不是。除了 Compressed Instruction，寄存器都是通过它们的 ABI 名字来引用。</p>
-<p>a0 到 a7 寄存器是用来作为函数的参数。如果一个函数有超过 8个参数，我们就需要用内存了。从这里也可以看出，当可以使用寄存器的时候，我们不会使用内存，我们只在不得不使用内存的场景才使用它。</p>
-<p>表单中的第4列，Saver列，当我们在讨论寄存器的时候也非常重要。</p>
-<p>它有两个可能的值Caller，Callee。我经常混淆这两个值，因为它们只差一个字母，我发现最简单的记住它们的方法是：</p>
-<ul>
-<li>Caller Saved寄存器在函数调用的时候不会保存</li>
-<li>Callee Saved寄存器在函数调用的时候会保存</li>
-</ul>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020134831.png" alt="img"></p>
-<p><strong>这里的意思是，一个Caller Saved寄存器可能被其他函数重写</strong>。假设我们在函数a中调用函数b，任何被函数a使用的并且是Caller Saved寄存器，调用函数b可能重写这些寄存器。我认为一个比较好的例子就是Return address寄存器（注，保存的是函数返回的地址），你可以看到ra寄存器是Caller Saved，这一点很重要，它导致了当函数a调用函数b的时侯，b会重写Return address。所以基本上来说，任何一个Caller Saved寄存器，作为调用方的函数要小心可能的数据可能的变化；任何一个Callee Saved寄存器，作为被调用方的函数要小心寄存器的值不会相应的变化。我经常会弄混这两者的区别，然后会到这张表来回顾它们。</p>
-<p>如果你们还记得的话，所有的寄存器都是 64bit，各种各样的数据类型都会被改造的可以放进这 64bit 中。比如说我们有一个 32bit 的整数，取决于整数是不是有符号的，会通过在前面补 32 个 0 或者 1 来使得这个整数变成 64bit 并存在这些寄存器中。</p>
-<blockquote>
-<p>学生提问：返回值可以放在 a1 寄存器吗？</p>
-<p>TA：这是个好问题。我认为理论上是可以的，如果一个函数的返回值是long long型，也就是128bit，我们可以把它放到一对寄存器中。这也同样适用于函数的参数。所以，如果返回值超过了一个寄存器的长度，也就是64bit，我们可以将返回值保存在a0和a1。但是如果你只将返回值放在a1寄存器，我认为会出错。</p>
-<p>学生提问：除了 Stack Pointer 和 Frame Pointer，我不认为我们需要更多的Callee Saved寄存器。</p>
-<p>TA：s0 - s11都是Callee寄存器，我认为它们是提供给编译器而不是程序员使用。在一些特定的场景下，你会想要确保一些数据在函数调用之后仍然能够保存，这个时候编译器可以选择使用s寄存器。</p>
-</blockquote>
-<h3 id="Stack"><a href="#Stack" class="headerlink" title="Stack"></a>Stack</h3><p>接下来我们讨论一下栈。栈之所以很重要的原因是，它使得我们的函数变得有组织，且能够正常返回。</p>
-<p>下面是一个非常简单的栈的结构图，其中每一个区域都是一个 <strong>Stack Frame，每执行一次函数调用就会产生一个Stack Frame。</strong></p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020408160.png" alt="img"></p>
-<p>每一次我们调用一个函数，函数都会为自己创建一个Stack Frame，并且只给自己用。函数通过移动 Stack Pointer 来完成 Stack Frame 的空间分配。</p>
-<p>对于 Stack 来说，是从高地址开始向低地址使用。所以栈总是向下增长。当我们想要创建一个新的 Stack Frame 的时候，总是对当前的 Stack Pointer 做减法。一个函数的 Stack Frame 包含了保存的寄存器，本地变量，并且，如果函数的参数多于8个，额外的参数会出现在 Stack 中。所以 Stack Frame 大小并不总是一样，即使在这个图里面看起来是一样大的。不同的函数有不同数量的本地变量，不同的寄存器，所以 Stack Frame 的大小是不一样的。但是有关 Stack Frame 有两件事情是确定的：</p>
-<ul>
-<li><strong>Return address 总是会出现在 Stack Frame 的第一位</strong></li>
-<li><strong>指向前一个 Stack Frame 的指针也会出现在栈中的固定位置</strong></li>
-</ul>
-<p>有关 Stack Frame 中有两个重要的寄存器，第一个是 SP（Stack Pointer），它指向 Stack 的底部并代表了当前 Stack Frame 的位置。第二个是 FP（Frame Pointer），它指向当前 Stack Frame 的顶部。因为 Return address 和指向前一个 Stack Frame 的指针都在当前Stack Frame的固定位置，所以可以通过当前的FP寄存器寻址到这两个数据。</p>
-<p>我们保存前一个Stack Frame的指针的原因是为了让我们能跳转回去。所以当前函数返回时，我们可以将前一个Frame Pointer存储到FP寄存器中。所以我们使用Frame Pointer来操纵我们的Stack Frames，并确保我们总是指向正确的函数。</p>
-<p>Stack Frame 必须要被汇编代码创建，所以是<strong>编译器生成了汇编代码，进而创建了Stack Frame</strong>。所以通常，在汇编代码中，函数的最开始你们可以看到 Function prologue，之后是函数的本体，最后是Epollgue。这就是一个汇编函数通常的样子。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020624180.png" alt="img"></p>
-<p>我们从汇编代码中来看一下这里的操作。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020718715.png" alt="img"></p>
-<p>在我们之前的 sum_to 函数中，只有函数主体，并没有 Stack Frame 的内容。它这里能正常工作的原因是它足够简单，并且它是一个 leaf 函数。leaf 函数是指不调用别的函数的函数，它的特别之处在于它不用担心保存自己的Return address 或者任何其他的Caller Saved寄存器，因为它不会调用别的函数。</p>
-<p>而另一个函数 sum_then_double 就不是一个leaf函数了，这里你可以看到它调用了sum_to。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020920984.png" alt="img"></p>
-<p>所以在这个函数中，需要包含 prologue。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021006444.png" alt="img"></p>
-<p>这里我们对Stack Pointer减16，这样我们为新的 Stack Frame 创建了16字节的空间。之后我们将 Return address 保存在 Stack Pointer 位置。</p>
-<p>之后就是调用 sum_to 并对结果乘以2，最后是 Epllogue，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021159511.png" alt="image-20220228021159511"></p>
-<p>这里首先将 Return address 加载回 ra 寄存器，通过对 Stack Pointer 加 16 来删除刚刚创建的 Stack Frame，最后 ret 从函数中退出。</p>
-<p>这里我替大家问一个问题，如果我们删除掉Prologue和Epllogue，然后只剩下函数主体会发生什么？有人可以猜一下吗？</p>
-<blockquote>
-<p>学生回答：sum_then_double将不知道它应该返回的Return address。所以调用sum_to的时候，Return address被覆盖了，最终sum_to函数不能返回到它原本的调用位置。</p>
-</blockquote>
-<p>是的，完全正确，我们可以看一下具体会发生什么。先在修改过的sum_then_double设置断点，然后执行sum_then_double。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021659428.png" alt="img"></p>
-<p>我们可以看到现在的ra寄存器是 0x80006392，它指向demo2函数，也就是sum_then_double的调用函数。之后我们执行代码，调用了sum_to。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021649880.png" alt="img"></p>
-<p>我们可以看到ra寄存器的值被 sum_to重写成了0x800065f4，指向sum_then_double，这也合理，符合我们的预期。我们在函数sum_then_double中调用了sum_to，那么sum_to就应该要返回到sum_then_double。</p>
-<p>之后执行代码直到sum_then_double返回。如前面那位同学说的，因为没有恢复sum_then_double自己的Return address，现在的Return address仍然是sum_to对应的值，现在我们就会进入到一个无限循环中。</p>
-<p>我认为这是一个很好的例子用来展示为什么跟踪Caller和Callee寄存器是重要的。</p>
-<p>接下来我们来看一些C代码。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021640522.png" alt="img"></p>
-<p>demo4函数里面调用了dummymain函数。我们在dummymain函数中设置一个断点，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021631418.png" alt="img"></p>
-<p>现在我们在dummymain函数中。如果我们在gdb中输入info frame，可以看到有关当前Stack Frame许多有用的信息。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090107324.png" alt="image-20220228090107324"></p>
-<ul>
-<li>Stack level 0，表明这是调用栈的最底层</li>
-<li>pc，当前的程序计数器</li>
-<li>saved pc，demo4的位置，表明当前函数要返回的位置</li>
-<li>source language c，表明这是C代码</li>
-<li>Arglist at，表明参数的起始地址。当前的参数都在寄存器中，可以看到 argc &#x3D; 3，argv 是一个地址</li>
-</ul>
-<p>如果输入 <code>backtrace</code>（简写bt）可以看到从当前调用栈开始的所有 Stack Frame。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021832784.png" alt="image-20220228021832784"></p>
-<p>如果对某一个Stack Frame感兴趣，可以先定位到那个 frame 再输入 <code>info frame</code>，假设对 syscall 的 Stack Frame 感兴趣。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090128324.png" alt="image-20220228090128324"></p>
-<p>在这个Stack Frame中有更多的信息，有一堆的 Saved Registers，有一些本地变量等等。这些信息对于调试代码来说超级重要。</p>
-<blockquote>
-<p>学生提问：为什么有的时候编译器会优化掉 <code>argc</code> 或者 <code>argv</code> ？这个以前发生过。</p>
-<p>TA：这意味着编译器发现了一种更有效的方法，不使用这些变量，而是通过寄存器来完成所有的操作。如果一个变量不是百分百必要的话，这种优化还是很有常见的。我们并没有给你编译器的控制能力，但是在你们的日常使用中，你可以尝试设置编译器的optimization flag为 0，不过就算这样，编译器也会做某些程度的优化。</p>
-</blockquote>
-<h3 id="Struct"><a href="#Struct" class="headerlink" title="Struct"></a>Struct</h3><p>今天我想讨论的最后一个话题是 struct，stuct 非常重要并且在课程的实验中会经常出现。我会稍微介绍一下 struct 在内存中的结构是怎样。基本上来说，struct 在内存中是一段连续的地址，如果我们有一个 struct，并且有f1，f2，f3三个字段。</p>
-<p>当我们创建这样一个struct时，内存中相应的字段会彼此相邻。你可以认为 struct 像是一个数组，但是里面的不同字段的类型可以不一样。（注，这应该是这一节中最有用的一句话了。。。）</p>
-<p>我们可以将struct作为参数传递给函数。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090154065.png" alt="image-20220228090154065"></p>
-<p>这里有一个名字是Person的struct，它有两个字段。我将这个struct作为参数传递给printPerson并打印相关的信息。我们在printPerson中设置一个断点，当程序运行到函数内部时打印当前的Stack Frame。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090208092.png" alt="img"></p>
-<p>我们可以看到当前函数有一个参数p。打印p可以看到这是struct Person的指针，打印p的反引用可以看到struct的具体内容。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090227304.png" alt="img"></p>
-<blockquote>
-<p>学生提问：是谁创建了编译器来将C代码转换成各种各样的汇编代码，是不同的指令集创建者，还是第三方？</p>
-<p>TA：我认为不是指令集的创建者，通常是第三方创建的。你们常见的两大编译器，一个是 gcc，这是由 GNU 基金会维护的；一个是 llvm，这个是开源的，你可以查到相应的代码。当一个新的指令集，例如 RISC-V，发布之后，我认为会指令集的创建者和编译器的设计者之间会有一些高度合作。简单来说我认为是第三方配合指令集的创建者完成的编译器。RISC-V 或许是个例外，因为它是来自于一个研究项目，相应的团队或许自己写了编译器，但是我不认为 Intel 对于 gcc 或者 llvm 有任何输入。</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/[object%20Object]/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/uploads/1.jpg">
-      <meta itemprop="name" content="Sam Shen">
-      <meta itemprop="description" content="share cs knowledge">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="AcKing">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">[object Object]<i class="fa fa-external-link-alt"></i></a>
-          
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2023-01-28 20:12:53 / Modified: 20:14:47" itemprop="dateCreated datePublished" datetime="2023-01-28T20:12:53+08:00">2023-01-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mit6-s081-os/" itemprop="url" rel="index"><span itemprop="name">mit6.s081 os</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Chapter-4-Page-Tables"><a href="#Chapter-4-Page-Tables" class="headerlink" title="Chapter 4 Page Tables"></a>Chapter 4 Page Tables</h1><p>存在某种形式的映射关系，并且映射关系对于实现隔离性 isolation 来说有帮助。</p>
-<h3 id="地址空间"><a href="#地址空间" class="headerlink" title="地址空间"></a>地址空间</h3><p>当我们运行 <code>cat</code> 时，它的地址空间从 0 到某个地址结束。当我们运行 <code>Shell</code> 时，它的地址也从 0 开始到某个地址结束。内核的地址空间也从 0 开始到某个地址结束。如果 <code>cat</code> 程序想要向地址 1000 写入数据，那么 <code>cat</code> 只会向它自己的地址 1000，而不是向 <code>Shell</code> 的地址 1000 写入数据。</p>
-<p><strong>每个程序都运行在自己的地址空间，并且这些地址空间彼此之间相互独立。在这种不同地址空间的概念中，<code>cat</code> 程序甚至都不具备引用属于 <code>Shell</code> 的内存地址的能力。</strong>这是我们想要达成的终极目标，因为这种方式为我们提供了<strong>强隔离性</strong>，<code>cat</code> 现在不能引用任何不属于自己的内存。</p>
-<p>所以现在的问题是如何在一个物理内存上，创建不同的地址空间，因为归根到底，我们使用的还是一堆存放了内存信息的 DRAM 芯片。</p>
-<blockquote>
-<p>Frans 教授提问：大家们，在XV6中从哪可以看到内存耗尽了？如果你们完成了 syscall 实验，你们会知道在 syscall 实验中有一部分是打印剩余内存的数量。</p>
-<p>学生回答：kalloc？</p>
-<p>Frans教授：是的。<code>kalloc</code> 保存了空余 page 的列表( freelist )，如果这个列表为空或者耗尽了，那么 kalloc 会返回一个空指针，内核会妥善处理并将结果返回给用户应用程序。并告诉用户应用程序，要么是对这个应用程序没有额外的内存了，要么是整个机器都没有内存了。</p>
-<p>内核的一部分工作就是优雅的处理这些情况，这里的优雅是指向用户应用程序返回一个错误消息，而不是直接崩溃。</p>
-</blockquote>
-<h3 id="页表-Page-Table"><a href="#页表-Page-Table" class="headerlink" title="页表(Page Table)"></a>页表(Page Table)</h3><p>我们如何能够在一个物理内存上创建不同的地址空间？</p>
-<p>最常见的方法，同时也是非常灵活的一种方法就是使用页表（Page Tables）。<strong>页表是在硬件中通过处理器和内存管理单元（Memory Management Unit,aka MMU）实现。</strong>所以在脑海中，应该有这么一张图：CPU 正在执行指令，例如 <code>sd $7, (a0)</code></p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002431824.png" alt="image-20220227002431824"></p>
-<p><strong>对于任何一条带有地址的指令，其中的地址应该认为是虚拟内存地址而不是物理地址</strong>。假设寄存器 <code>a0</code> 中是地址 <code>0x1000</code> ，那么这是一个虚拟内存地址。虚拟内存地址会被转到内存管理单元（MMU）</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002924560.png" alt="image-20220227002924560"></p>
-<p>内存管理单元会将虚拟地址翻译成物理地址，之后这个物理地址会被用来索引物理内存，并从物理内存加载，或者向物理内存存储数据。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003015460.png" alt="img"></p>
-<p><strong>从 CPU 的角度来说，一旦 MMU 打开了，它执行的每条指令中的地址都是虚拟内存地址。</strong></p>
-<p>为了能够完成虚拟内存地址到物理内存地址的翻译，MMU 会有一个表单，表单中，一边是虚拟内存地址，另一边是物理内存地址。举个例子，虚拟内存地址 <code>0x1000</code> 对应了一个我随口说的物理内存地址 <code>0xFFF0</code> 。这样的表单可以非常灵活。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003037993.png" alt="img"></p>
-<p><strong>通常，内存地址对应关系的表单也保存在内存中。</strong>所以 CPU 中需要有一些寄存器用来存放<strong>表单在物理内存中的地址。</strong>现在，在内存的某个位置保存了地址关系表单，我们假设这个位置的物理内存地址是 <code>0x10</code> 。那么在 <code>RISC-V</code> 上一个叫做 <strong>SATP</strong> 的寄存器会保存地址 <code>0x10</code>。</p>
-<p>这样，CPU 就可以告诉 MMU，可以从哪找到将虚拟内存地址翻译成物理内存地址的表单。</p>
-<blockquote>
-<p>sqf 注：page table一般存储在内存中，由寄存器 SATP 指向其起始地址。</p>
-</blockquote>
-<blockquote>
-<p>学生提问：所以 MMU 并不会保存 page table，它只会从内存中读取 page table，然后完成翻译，是吗？</p>
-<p>Frans教授：是的，这就是你们应该记住的。<strong>page table 保存在内存中，MMU 只是会去查看 page table</strong>， 我们接下来会看到，page table 比我们这里画的要稍微复杂一些。</p>
-</blockquote>
-<p>这里的基本想法是<strong>每个应用程序都有自己独立的表单，并且这个表单定义了应用程序的地址空间。</strong>所以当操作系统将CPU从一个应用程序切换到另一个应用程序时，同时也需要切换 <strong>SATP</strong> 寄存器中的内容，从而<strong>指向新的进程保存在物理内存中的地址对应表单。</strong>这样的话，<code>cat</code> 程序和 <code>shell</code> 程序中相同的虚拟内存地址，就可以翻译到不同的物理内存地址，因为每个应用程序都有属于自己的不同的地址对应表单。这样说得通吗？</p>
-<blockquote>
-<p>学生提问：刚刚说到 SATP 寄存器会根据进程而修改，我猜每个进程对应的 SATP 值是由内核保存的？</p>
-<p>Frans教授：是的，<strong>内核会写 SATP 寄存器，写 SATP 寄存器是一条特殊权限指令。</strong>所以，用户应用程序不能通过更新这个寄存器来更换一个地址对应表单，否则的话就会破坏隔离性。所以，只有运行在 kernel mode 的代码可以更新这个寄存器。</p>
-</blockquote>
-<p>前面都是最基本的介绍，我们在前面画的图还有做的解释都比较初级且存在明显不合理的地方。有一件事情我刚刚没有提到，这里的表单是如何工作的？从刚刚画的图看来，对于每个虚拟地址，在表单中都有一个条目，如果我们真的这么做，表单会有多大？原则上说，在 RISC-V 上会有多少地址，或者一个寄存器可以保存多少个地址？寄存器是 64bit 的，所以有多少个地址呢？是的，$2^{64}$ 个地址，<strong>所以如果我们以地址为粒度来管理，表单会变得非常巨大</strong>。实际上，所有的内存都会被这里的表单耗尽，所以这一点也不合理。</p>
-<p>所以，实际情况不可能是一个虚拟内存地址对应 page table 中的一个条目。接下来我将分两步介绍 RISC-V 中是如何工作的。</p>
-<ul>
-<li>不要为每个地址创建一条表单条目，而是为每个 page 创建一条表单条目，所以每一次地址翻译都是针对一个 page。而 RISC-V 中，一个 page 是 4KB，也就是 4096 Byte 。这个大小很常见，几乎所有的处理器都使用 4KB 大小的 page 或者支持 4KB 大小的 page。</li>
-</ul>
-<p>现在，内存地址的翻译方式略微的不同了。首先对于虚拟内存地址，我们将它划分为两个部分，index 和 offset，index 用来查找 page，offset 对应的是一个 page 中的哪个字节。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003501859.png" alt="img"></p>
-<p>当 MMU 在做地址翻译的时候，通过读取虚拟内存地址中的 index 可以知道物理内存中的 page 号，这个 page 号对应了物理内存中的 4096 个字节。之后虚拟内存地址中的 offset 指向了 page 中的 4096 个字节中的某一个，假设 offset 是 12，那么 page 中的第 12 个字节被使用了。将 offset 加上 page 的起始地址，就可以得到物理内存地址。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003553962.png" alt="image-20220227003553962"></p>
-<p>有关 RISC-V 的一件有意思的事情是，虚拟内存地址都是 64bit，这也说的通，因为 RISC-V 的寄存器是 64bit 的。但是实际上，在我们使用的 RSIC-V 处理器上，并不是所有的 64bit 都被使用了，也就是说高 25bit 并没有被使用。这样的结果是<strong>限制了虚拟内存地址的数量</strong>，虚拟内存地址的数量现在只有 $2^{39}$ 个，大概是 512 GB。当然，如果必要的话，最新的处理器或许可以支持更大的地址空间，只需要将未使用的 25bit 拿出来做为虚拟内存地址的一部分即可。在有效利用的 39 bit 中，有 27bit 被用来当做 index，12bit 被用来当做 offset，offset 必须是 12bit，因为对应了一个 page 的 4096 个字节。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003719415.png" alt="img"></p>
-<p>在 RISC-V 中，物理内存地址是 56bit，所以物理内存可以大于单个虚拟内存地址空间，但是也最多到 $2^{56}$。大多数主板还不支持 $2^{56}$ 这么大的物理内存，但是原则上，如果你能造出这样的主板，那么最多可以支持 $2^{56}$ 字节的物理内存。</p>
-<p>物理内存地址是 56bit ，其中 44bit 是物理 page 号（PPN，Physical Page Number），剩下 12bit 是 offset 完全继承自虚拟内存地址（<strong>地址转换时，只需要将虚拟内存中的 27bit 翻译成物理内存中的 44bit 的 page 号，剩下的 12bit offset直接拷贝过来即可</strong>）。</p>
-<p>这里有什么问题吗？这些的内容还挺重要的，你们需要掌握这的内容才能做出下一个 page table lab。</p>
-<blockquote>
-<p>学生：图中的 56bit 是根据什么确定的？</p>
-<p>Frans教授：这是由硬件设计人员决定的，所以 RISC-V 的设计人员认为 56bit 的物理内存地址是个不错的选择。可以假定，他们是通过技术发展的趋势得到这里的数字。比如说，设计是为了满足 5 年的需求，可以预测物理内存在 5 年内不可能超过 $2^{56}$ 这么大。或许，他们预测是的一个小得多的数字，但是为了防止预测错误，他们选择了像 $2^{56}$ 这么大的数字。这里说的通吗？很多同学都问了这个问题。</p>
-<p>学生提问：<strong>如果虚拟内存最多是 $2^{39}$，而物理内存最多是 $2^{56}$，这样我们可以有多个进程都用光了他们的虚拟内存，但是物理内存还有剩余，对吗？</strong></p>
-<p>Frans教授：是的，完全正确。</p>
-<p>学生提问：因为这是一个 64bit 的机器，为什么硬件设计人员本可以用 64bit 但是却用了 56bit？</p>
-<p>Frans教授：选择 56bit 而不是 64bit 是因为在主板上只需要 56 根线。</p>
-</blockquote>
-<p>通过前面的第一步，我们现在的地址转换表是以 page 为粒度，而不是以单个内存地址为粒度，现在这个地址转换表已经可以被称为 page table 了。但是目前的设计还不能满足实际的需求。</p>
-<p>如果每个进程都有自己的 page table，那么每个 page table 表会有多大呢？</p>
-<p>这个page table最多会有 $2^{27}$ 个条目（虚拟内存地址中的 index 长度为27），这是个非常大的数字。如果每个进程都使用这么大的 page table，进程需要为 page table 消耗大量的内存，并且很快物理内存就会耗尽。</p>
-<p>所以实际上，硬件并不是按照这里的方式来存储 page table。从概念上来说，你可以认为 page table 是从 0 到 $2^{27}$ ，但是实际上并不是这样。实际中，page table 是一个多级的结构。下图是一个真正的 RISC-V page table 结构和硬件实现。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227004115306.png" alt="img"></p>
-<p>我们之前提到的虚拟内存地址中的 27bit 的 index，实际上是由 3 个 9bit 的数字组成（L2，L1，L0）。前 9bit 被用来索引最高级的 page directory（注：通常 page directory 是用来索引 page table 或者其他 page directory 物理地址的表单，但是在课程中，page table，page directory， page directory table 区分并不明显，可以都认为是有相同结构的地址对应表单）。</p>
-<p>一个 directory 是 4096 Bytes，就跟 page 的大小是一样的，directory 中的一个条目被称为 PTE（Page Table Entry）是 64 bit，就像寄存器的大小一样，也就是 8 Bytes，所以一个 Directory page 有 512 个条目。</p>
-<p>所以实际上，<strong>SATP 寄存器会指向最高一级的 page directory 的物理内存地址</strong>，之后我们用虚拟内存中 index 的高 9 bit 用来索引最高一级的 page directory，这样我们就能得到一个 PPN，也就是物理 page 号。这个 PPN 指向了中间级的 page directory。</p>
-<p><strong>当我们在使用中间级的 page directory 时，我们通过虚拟内存地址中的 L1 部分完成索引。接下来会走到最低级的 page directory，我们通过虚拟内存地址中的 L0 部分完成索引。在最低级的 page directory 中，我们可以得到对应于虚拟内存地址的物理内存地址。</strong></p>
-<p>从某种程度上来说，与之前一种方案还是很相似的，除了实际的索引是由 3 步，而不是 1 步完成。这种方式的主要优点是，如果地址空间中大部分地址都没有使用，你不必为每一个 index 准备一个条目。</p>
-<blockquote>
-<p> 举个例子，如果你的地址空间只使用了一个page，4096 Byte。除此之外，你没有使用任何其他的地址。现在，你需要多少个 page table entry，或者page table directory来映射这一个page？</p>
-<p>在最高级，你需要一个 page directory。在这个 page directory 中，你需要一个数字是 0 的PTE，指向中间级 page directory。在中间级，你也需要一个 page directory，里面也是一个数字 0 的PTE，指向最低级 page directory。所以这里总共需要 3 个 page directory（也就是 3 * 512 个条目）。</p>
-</blockquote>
-<p>而在前一个方案中，虽然我们只使用了一个page，还是需要 $2^{27}$ 个PTE。而这个方案中，我们只需要 1536 个PTE，所需的空间大大减少了。这是实际上硬件采用这种层次化的 3 级 page directory 结构的主要原因。</p>
-<p>这里有什么问题吗？这部分还是很重要的。</p>
-<blockquote>
-<p>Frans教授：所有的 page directory 传递的都是 PPN，对应的物理地址是 44bit 的PPN加上 12bit 的 0（注，也就是 page 的起始地址，因为每个 page directory 都使用一个完整的 page，所以直接从 page 起始地址开始使用就行）。如果我们查看这里的 PTE 条目，它们都有相同的格式，其中 44bit 是PPN，但是寄存器是 64bit 的，所有有一些 bit 是留空的。<strong>支持 page 的硬件在低 10bit 存了一些标志位用来控制地址权限。</strong></p>
-<p>如果你把 44bit 的 PPN 和 10bit 的 Flags 相加是 54bit，也就是说还有 10bit 未被使用，这 10bit 被用来作为未来扩展。比如说某一天你有了一个新的 RISC-V 处理器，它的 page table 可能略有不同，或许有超过 44bit 的 PPN。如果你看下面这张图，你可以看到，这里有 10bit 是作为保留字段存在的。</p>
-</blockquote>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227004744286.png" alt="img"></p>
-<p>接下来，让我们看看PTE中的 Flag，因为它也很重要。每个 PTE 的低 10bit 是一堆标志位：</p>
-<ul>
-<li>第一个标志位是 Valid。如果Valid bit位为1，那么表明这是一条合法的PTE，你可以用它来做地址翻译。对于刚刚举得那个小例子（应用程序只用了1个page的例子），我们只使用了3个page directory，每个page directory中只有第0个PTE被使用了，所以只有第0个PTE的Valid bit位会被设置成1，其他的511个PTE的Valid bit为0。这个标志位告诉MMU，你不能使用这条PTE，因为这条PTE并不包含有用的信息。</li>
-<li>下两个标志位分别是 Readable 和 Writable。表明你是否可以读&#x2F;写这个 page。</li>
-<li>Executable 表明你可以从这个page执行指令。</li>
-<li>User 表明这个 page 可以被运行在用户空间的进程访问。</li>
-<li>其他标志位并不是那么重要，他们偶尔会出现，前面 5个是重要的标志位。</li>
-</ul>
-<blockquote>
-<p>学生提问：我对于这里的 3个 page table 有个问题，PPN是如何合并成最终的物理内存地址？</p>
-<p>Frans教授：我之前或许没有很直接的说这部分，<strong>在最高级的page directory中的PPN，包含了下一级page directory的物理内存地址，依次类推。在最低级page directory，我们还是可以得到 44bit的PPN，这里包含了我们实际上想要翻译的物理page地址，然后再加上虚拟内存地址的 12bit offset，就得到了 56bit物理内存地址</strong>。</p>
-<p>Frans教授：<strong>让我来问自己的一个有趣的问题，为什么是 PPN 存在这些 page directory 中？为什么不是一个虚拟内存地址？</strong></p>
-<p>Frans教授：<strong>我们不能让我们的地址翻译依赖于另一个翻译，否则我们可能会陷入递归的无限循环中。所以 page directory 必须存物理地址。那 SATP 呢？它存的是物理地址还是虚拟地址？</strong></p>
-<p>某学生回答：还是物理地址，因为最高级的 page directory 还是存在物理内存中，对吧。</p>
-<p>Frans教授：是的，这里必须是物理地址，因为我们要用它来完成地址翻译，而不是对它进行地址翻译，所以 <strong>SATP 需要知道最高一级的 page directory 的物理地址是什么。</strong></p>
-<p>学生提问： 这里有层次化的 3个 page table，每个 page table 都由虚拟地址的 9bit 来索引，所以是由虚拟地址中的 3个 9bit来分别索引 3个 page table，对吗？</p>
-<p>Frans教授：是的，最高的 9bit 用来索引最高一级的 page directory，第二个 9bit 用来索引中间级的page directory，第三个 9bit 用来索引最低级的 page directory。</p>
-<p>学生提问：当一个进程请求一个虚拟内存地址时，CPU 会查看 SATP 寄存器得到对应的最高一级 page table，这级 page table 会使用虚拟内存地址中 27bit index 的最高 9bit 来完成索引，如果索引的结果为空，MMU 会自动创建一个 page table吗？</p>
-<p>Frans教授：不会的，MMU 会告诉操作系统或者处理器，抱歉我不能翻译这个地址，最终这会变成一个 page fault。如果一个地址不能被翻译，那就不翻译。就像你在运算时除以 0 一样，处理器会拒绝那样做。</p>
-<p>学生提问：我想知道我们是怎么计算 page table 的物理地址，是不是这样，我们从最高级的 page table 得到 44bit 的PPN，然后再加上虚拟地址中的 12bit offset，就得到了完整的 56bit page table 物理地址？</p>
-<p>Frans教授：我们不会加上虚拟地址中的 offset，这里只是使用了 12bit 的 0，<strong>我们用 44bit 的 PPN，再加上 12bit 的 0，这样就得到了下一级 page directory 的 56bit 物理地址</strong>。这里要求每个 page directory 都与物理 page 对齐（也就是 page directory 的起始地址就是某个 page 的起始地址，所以低 12bit 都为 0）</p>
-</blockquote>
-<h3 id="页表缓存-TLB-Translation-Lookside-Buffer"><a href="#页表缓存-TLB-Translation-Lookside-Buffer" class="headerlink" title="页表缓存 TLB(Translation Lookside Buffer)"></a>页表缓存 TLB(Translation Lookside Buffer)</h3><p>如果我们回想一下 page table 的结构，你可以发现，当处理器从内存加载或者存储数据时，基本上都要做3次内存查找，第一次在最高级的 page directory，第二次在中间级的 page directory，最后一次在最低级的 page directory。所以对于一个虚拟内存地址的寻址，需要读三次内存，这里代价有点高。所以实际中，几乎所有的处理器都会对于最近使用过的虚拟地址的翻译结果有缓存。这个缓存被称为：Translation Lookside Buffer（通常翻译成页表缓存），你会经常看到它的缩写 TLB。基本上来说，这就是 Page Table Entry 的缓存，也就是PTE的缓存。</p>
-<p><strong>当处理器第一次查找一个虚拟地址时，硬件通过 3级 page table 得到最终的 PPN，TLB 会保存虚拟地址到物理地址的映射关系。这样下一次当你访问同一个虚拟地址时，处理器可以查看 TLB，TLB 会直接返回物理地址，而不需要通过 page table 得到结果。</strong></p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005059594.png" alt="img"></p>
-<blockquote>
-<p>学生提问：前面说 TLB 会保存虚拟地址到物理地址的对应关系，如果在page 级别做 cache 是不是更加高效？</p>
-<p>Frans教授：有很多种方法都可以实现 TLB，对于你们来说最重要的是知道 TLB 是存在的。TLB 实现的具体细节不是我们要深入讨论的内容。这是处理器中的一些逻辑，对于操作系统来说是不可见的，操作系统也不需要知道 TLB 是如何工作的。<strong>你们需要知道 TLB 存在的唯一原因是，如果你切换了 page table，操作系统需要告诉处理器当前正在切换 page table，处理器会清空 TLB。</strong>因为本质上来说，如果你切换了page table，TLB 中的缓存将不再有用，它们需要被清空，否则地址翻译可能会出错。所以操作系统知道 TLB 是存在的，但只会时不时的告诉操作系统，现在的 TLB 不能用了，因为要切换 page table 了。在 RISC-V 中，清空TLB的指令是 <code>sfence_vma</code> 。</p>
-</blockquote>
-<blockquote>
-<p>学生提问：3级的 page table 是由操作系统实现的还是由硬件自己实现的？</p>
-<p>Frans教授：这是由硬件实现的，所以 3级 page table 的查找都发生在硬件中。<strong>MMU 是硬件的一部分而不是操作系统的一部分。</strong>在 XV6 中，有一个函数也实现了 page table 的查找，因为时不时的 XV6 也需要完成硬件的工作，所以XV6有这个叫做 <code>walk</code> 的函数，它在软件中实现了 MMU 硬件相同的功能。</p>
-<p>学生提问：在这个机制中，TLB 发生在哪一步，是在地址翻译之前还是之后？</p>
-<p>Frans教授：整个 CPU 和 MMU 都在处理器芯片中，所以在一个 RISC-V 芯片中，<strong>有多个 CPU 核，MMU 和 TLB 存在于每一个 CPU核里面。</strong>RISC-V 处理器有 L1 cache，L2 Cache，有些 cache 是根据物理地址索引的，有些 cache 是根据虚拟地址索引的。<strong>由虚拟地址索引的 cache 位于 MMU 之前，由物理地址索引的 cache 位于 MMU 之后。</strong></p>
-<p>学生提问：之前提到，硬件会完成 3级 page table 的查找，那为什么我们要在 XV6 中有一个 walk 函数来完成同样的工作？</p>
-<p>Frans教授：非常好的问题。这里有几个原因：</p>
-<ul>
-<li>首先 XV6 中的 walk 函数设置了最初的 page table，它需要对 3级page table 进行编程，所以它首先需要能模拟 3级 page table。</li>
-<li>另一个原因或许你们已经在 syscall 实验中遇到了，在 XV6 中，内核有它自己的 page table，用户进程也有自己的 page table，<strong>用户进程指向 <code>sys_info</code> 结构体的指针存在于用户空间的 page table，但是内核需要将这个指针翻译成一个自己可以读写的物理地址。</strong>如果你查看 <code>copy_in</code> ，<code>copy_out</code> ，你可以发现内核会通过用户进程的 page table，将用户的虚拟地址翻译得到物理地址，这样内核可以读写相应的物理内存地址。这就是为什么在 XV6 中需要有 walk 函数的一些原因。</li>
-</ul>
-<p>学生提问：为什么硬件不开发类似于 walk 函数的接口？这样我们就不用在 XV6 中用软件实现自己的接口，自己实现还容易有bug。为什么没有一个特殊权限指令，接收虚拟内存地址，并返回物理内存地址？</p>
-<p>Frans教授：其实这就跟你向一个虚拟内存地址写数据，硬件会自动帮你完成工作一样（工作是指翻译成物理地址，并完成数据写入）。你们在page table实验中会完成相同的工作。我们接下来在看XV6的实现的时候会看到更多的内容。</p>
-</blockquote>
-<p>在我们介绍XV6之前，有关 page table 我还想说一点。用时髦的话说，page table 提供了一层抽象（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Indirection">level of indirection</a>）。我这里说的抽象就是指从虚拟地址到物理地址的映射，这里的映射关系完全由操作系统控制。</p>
-<p>因为操作系统对于这里的地址翻译有完全的控制，它可以实现各种各样的功能。比如，当一个 PTE 是无效的，硬件会返回一个 page fault，对于这个 page fault，操作系统可以更新 page table 并再次尝试指令。通过操纵 page table，在运行时有各种各样可以做的事情。我们在之后有一节课专门会讲，当出现 page fault 的时候，操作系统可以做哪些有意思的事情。现在只需要记住，page table 是一个无比强大的机制，它为操作系统提供了非常大的灵活性。这就是为什么 page table 如此流行的一个原因。</p>
-<h3 id="Kernel-Page-Table"><a href="#Kernel-Page-Table" class="headerlink" title="Kernel Page Table"></a>Kernel Page Table</h3><p>接下来，我们看一下在 XV6 中，page table 是如何工作的？首先我们来看一下 kernel page 的分布。下图就是内核中地址的对应关系，左边是内核的虚拟地址空间，右边上半部分是物理内存或者说是DRAM，右边下半部分是 I&#x2F;O 设备。接下来我会首先介绍右半部分，然后再介绍左半部分。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005631204.png" alt="image-20220227005631204"></p>
-<p>图中的右半部分的结构完全由硬件设计者决定。如你们上节课看到的一样，当操作系统启动时，会从地址 <code>0x80000000</code> 开始运行，这个地址其实也是由硬件设计者决定的。具体的来说，如果你们看一个主板，中间是 RISC-V 处理器，我们现在知道了处理器中有 4个核，每个核都有自己的 MMU 和 TLB。处理器旁边就是 DRAM 芯片。主板的设计人员决定了，在完成了虚拟到物理地址的翻译之后，如果得到的物理地址大于 <code>0x80000000</code> 会走向 DRAM 芯片，如果得到的物理地址低于 <code>0x80000000</code> 会走向不同的 I&#x2F;O 设备。这是由这个主板的设计人员决定的物理结构。如果你想要查看这里的物理结构，你可以阅读主板的手册，手册中会一一介绍物理地址对应关系。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005719186.png" alt="img"></p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005730721.png" alt="img"></p>
-<p>首先，地址 0 是保留的，地址 <code>0x10090000</code> 对应以太网，地址 <code>0x80000000</code> 对应 DDR 内存，处理器外的易失存储（Off-Chip Volatile Memory），也就是主板上的 DRAM 芯片。所以，在你们的脑海里应该要记住这张主板的图片，即使我们接下来会基于你们都知道的 C 语言程序—QEMU 来做介绍，但是最终所有的事情都是由主板硬件决定的。</p>
-<blockquote>
-<p>学生提问：当你说这里是由硬件决定的，硬件是特指 CPU 还是说 CPU 所在的主板？</p>
-<p>Frans教授：CPU所在的主板，CPU 只是主板的一小部分，DRAM 芯片位于处理器之外。是主板设计者将处理器，DRAM 和许多 I&#x2F;O 设备汇总在一起。对于一个操作系统来说，CPU 只是一个部分，I&#x2F;O 设备同样也很重要。所以当你在写一个操作系统时，你需要同时处理 CPU 和 I&#x2F;O 设备，比如你需要向互联网发送一个报文，操作系统需要调用网卡驱动和网卡来实际完成这个工作。</p>
-</blockquote>
-<p>回到最初那张图的右侧：物理地址的分布。可以看到最下面是未被使用的地址，这与主板文档内容是一致的（地址为0）。<strong>地址 <code>0x1000</code> 是 boot ROM 的物理地址，当你对主板上电，主板做的第一件事情就是运行存储在 boot ROM 中的代码，当 boot 完成之后，会跳转到地址 <code>0x80000000</code>，操作系统需要确保那个地址有一些数据能够接着启动操作系统。</strong></p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005839429.png" alt="img"></p>
-<p>这里还有一些其他的 I&#x2F;O 设备：</p>
-<ul>
-<li>PLIC 是中断控制器（Platform-Level Interrupt Controller）我们下周的课会讲。</li>
-<li>CLINT（Core Local Interruptor）也是中断的一部分。所以多个设备都能产生中断，需要中断控制器来将这些中断路由到合适的处理函数。</li>
-<li>UART（Universal Asynchronous Receiver&#x2F;Transmitter）负责与 console 和显示器交互。</li>
-<li>VIRTIO disk，与磁盘进行交互。</li>
-</ul>
-<p>地址 <code>0x02000000</code> 对应CLINT，当你向这个地址执行读写指令，你是向实现了 CLINT 的芯片执行读写。<strong>这里你可以认为你直接在与设备交互，而不是读写物理内存。</strong></p>
-<blockquote>
-<p>学生提问：确认一下，低于 <code>0x80000000</code> 的物理地址，不存在于 DRAM 中，当我们在使用这些地址的时候，指令会直接走向其他的硬件，对吗？</p>
-<p>Frans教授：是的。高于 <code>0x80000000</code> 的物理地址对应 DRAM 芯片，但是对于例如以太网接口，也有一个特定的低于 <code>0x80000000</code> 的物理地址，我们可以对这个叫做内存映射I&#x2F;O（Memory-mapped I&#x2F;O）的地址执行读写指令，来完成设备的操作。</p>
-<p> 学生提问：为什么物理地址最上面一大块标为未被使用？</p>
-<p>Frans教授：物理地址总共有 $2^{56}$ 那么多，但是你不用在主板上接入那么多的内存。所以不论主板上有多少 DRAM 芯片，总是会有一部分物理地址没有被用到。实际上在 XV6 中，我们限制了内存的大小是 128MB。</p>
-<p>学生提问：当读指令从CPU发出后，它是怎么路由到正确的 I&#x2F;O 设备的？比如说，当 CPU 要发出指令时，它可以发现现在地址是低于 <code>0x80000000</code>，但是它怎么将指令送到正确的I&#x2F;O设备？</p>
-<p>Frans教授：你可以认为在 RISC-V 中有一个多路输出选择器（demultiplexer）。</p>
-</blockquote>
-<p>接下来我会切换到第一张图的左边，这就是 XV6 的虚拟内存地址空间。当机器刚刚启动时，还没有可用的 page，XV6 操作系统会设置好内核使用的虚拟地址空间，也就是这张图左边的地址分布。</p>
-<p>因为我们想让 XV6 尽可能的简单易懂，所以这里的虚拟地址到物理地址的映射，大部分是相等的关系。比如说内核会按照这种方式设置 page table，虚拟地址 <code>0x02000000</code> 对应物理地址 <code>0x02000000</code>。这意味着左侧低于 PHYSTOP 的虚拟地址，与右侧使用的物理地址是一样的。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010008879.png" alt="img"></p>
-<p>所以，这里的箭头都是水平的，因为这里是完全相等的映射。除此之外，这里还有两件重要的事情：</p>
-<p>第一件事情是，有一些 page 在虚拟内存中的地址很靠后，比如 kernel stack 在虚拟内存中的地址就很靠后。这是因为在它之下有一个未被映射的 Guard page，这个 Guard page 对应的 PTE 的 Valid 标志位没有设置，这样，如果 kernel stack 耗尽了，它会溢出到 Guard page，但是因为 Guard page 的 PTE 中 Valid 标志位未设置，会导致立即触发 page fault，这样的结果好过内存越界之后造成的数据混乱。立即触发一个 panic（也就是 page fault），你就知道 kernel stack 出错了。同时我们也又不想浪费物理内存给 Guard page，所以 Guard page 不会映射到任何物理内存，它只是占据了虚拟地址空间的一段靠后的地址。</p>
-<p>同时，kernel stack 被映射了两次，在靠后的虚拟地址映射了一次，在 PHYSTOP 下的 Kernel data 中又映射了一次，但是实际使用的时候用的是上面的部分，因为有 Guard page 会更加安全。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010120813.png" alt="img"></p>
-<p>这是众多你可以通过 page table 实现的有意思的事情之一。你可以<strong>向同一个物理地址映射两个虚拟地址</strong>，你可以不将一个虚拟地址映射到物理地址。可以是一对一的映射，一对多映射，多对一映射。XV6至少在1-2个地方用到类似的技巧。这的 kernel stack 和 Guard page 就是 XV6 基于 page table 使用的有趣技巧的一个例子。</p>
-<p>第二件事情是权限。例如 Kernel text page 被标位 R-X，意味着你可以读它，也可以在这个地址段执行指令，但是你不能向 Kernel text 写数据。通过设置权限我们可以尽早的发现 Bug 从而避免 Bug。对于Kernel data 需要能被写入，所以它的标志位是 RW-，但是你不能在这个地址段运行指令，所以它的 X标志位未被设置。（注，所以，kernel text 用来存代码，代码可以读，可以运行，但是不能篡改，kernel data 用来存数据，数据可以读写，但是不能通过数据伪装代码在 kernel 中运行）</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010213494.png" alt="img"></p>
-<blockquote>
-<p>学生提问：对于不同的进程会有不同的 kernel stack 吗？</p>
-<p>Frans：答案是的，<strong>每一个用户进程都有一个对应的 kernel stack</strong>。</p>
-<p>学生提问：用户程序的虚拟内存会映射到未使用的物理地址空间吗？</p>
-<p>Frans教授：在 kernel page table 中，有一段 Free Memory，它对应了物理内存中的一段地址。</p>
-</blockquote>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010304924.png" alt="img"></p>
-<blockquote>
-<p><strong>XV6 使用这段 free memory 来存放用户进程的 page table，text 和 data。如果我们运行了非常多的用户进程，某个时间点我们会耗尽这段内存，这个时候 fork 或者 exec 会返回错误。</strong></p>
-<p>同一个学生提问：这就意味着，用户进程的虚拟地址空间会比内核的虚拟地址空间小的多，是吗？</p>
-<p>Frans教授：本质上来说，两边的虚拟地址空间大小是一样的。但是用户进程的虚拟地址空间使用率会更低。</p>
-<p>学生提问：如果多个进程都将内存映射到了同一个物理位置，这里会优化合并到同一个地址吗？</p>
-<p>Frans教授：XV6 不会做这样的事情，但是 page table 实验中有一部分就是做这个事情。真正的操作系统会做这样的工作。当你们完成了 page table 实验，你们就会对这些内容更加了解。</p>
-</blockquote>
-<blockquote>
-<p>学生提问：每个进程都会有自己的 3级树状 page table，通过这个 page table 将虚拟地址翻译成物理地址。所以看起来当我们将内核虚拟地址翻译成物理地址时，我们并不需要 kernel 的 page table，因为进程会使用自己的树状 page table 并完成地址翻译（注，不太理解这个问题点在哪）。</p>
-<p>Frans教授：当 kernel 创建了一个进程，针对这个进程的 page table 也会从 Free memory 中分配出来。内核会为用户进程的 page table 分配几个 page，并填入 PTE。在某个时间点，当内核运行了这个进程，内核会将进程的根 page table 的地址加载到 SATP 中。从那个时间点开始，处理器会使用内核为那个进程构建的虚拟地址空间。</p>
-<p>同一个学生提问：所以内核为进程放弃了一些自己的内存，但是进程的虚拟地址空间理论上与内核的虚拟地址空间一样大，虽然实际中肯定不会这么大。</p>
-<p>Frans教授：是的，下图是用户进程的虚拟地址空间分布，与内核地址空间一样，它也是从0到MAXVA。</p>
-</blockquote>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010526643.png" alt="img"></p>
-<blockquote>
-<p>它有由内核设置好的，专属于进程的 page table 来完成地址翻译。</p>
-</blockquote>
-<blockquote>
-<p>学生提问：但是我们不能将所有的 MAXVA 地址都使用吧？</p>
-<p>Frans教授：是的我们不能，这样我们会耗尽内存。大多数的进程使用的内存都远远小于虚拟地址空间。</p>
-</blockquote>
-<h3 id="kvminit-函数"><a href="#kvminit-函数" class="headerlink" title="kvminit 函数"></a>kvminit 函数</h3><p>首先，我们来做一个的常规操作，启动我们的 XV6，这里 QEMU 实现了主板，同时我们打开 gdb。</p>
-<p>上一次我们看了 boot 的流程，我们跟到了 main 函数。main 函数中调用的一个函数是 <code>kvminit</code>（3.9），这个函数会<strong>设置好 kernel 的地址空间</strong>。<code>kvminit</code> 的代码如下图所示：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012453315.png" alt="img"></p>
-<p>我们在前一部分看了 kernel 的地址空间长成什么样，这里我们来看一下代码是如何将它设置好的。首先在 kvminit 中设置一个断点，之后运行代码到断点位置。在 gdb 中执行 layout split，可以看到（从上面的代码也可以看出）函数的第一步是为最高一级 page directory 分配物理 page（注，调用 kalloc就是分配物理 page），下一行将这段内存初始化为 0。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012535095.png" alt="img"></p>
-<p>之后，通过 kvmmap 函数，将每一个 I&#x2F;O 设备映射到内核。例如，下图中高亮的行将 UART0 映射到内核的地址空间。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012614622.png" alt="img"></p>
-<p>我们可以查看一个文件叫做 <code>memlayout.h</code>，它将4.5中的文档翻译成了一堆常量。在这个文件里面可以看到，UART0 对应了地址 <code>0x10000000</code>（注，4.5中的文档是真正 SiFive RISC-V 的文档，而下图是 QEMU 的地址，所以4.5中的文档地址与这里的不符）。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012702699.png" alt="img"></p>
-<p>通过 <code>kvmmap</code> 可以将物理地址映射到相同的虚拟地址（注，因为 kvmmap 的前两个参数一致）。</p>
-<p>在 page table 实验中，第一个练习是实现 vmprint，这个函数会打印当前的 kernel page table。我们现在跳过这个函数，看一下执行完第一个 kvmmap 时的 kernel page table。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012745337.png" alt="img"></p>
-<p>我们来看一下这里的输出。第一行是最高一级 page directory 的地址，这就是存在 SATP 或者将会存在 SATP 中的地址。第二行可以看到最高一级 page directory 只有一条 PTE 序号为0，它包含了中间级 page directory 的物理地址。第三行可以看到中间级的 page directory 只有一条 PTE 序号为128，它指向了最低级 page directory 的物理地址。第四行可以看到最低级的 page directory 包含了 PTE 指向物理地址。你们可以看到最低一级 page directory 中 PTE 的物理地址就是 <code>0x10000000</code>，对应了 UART0。</p>
-<p>前面是物理地址，我们可以从虚拟地址的角度来验证这里符合预期。我们将地址 <code>0x10000000</code> 向右移位 12bit，这样可以得到虚拟地址的高 27bit（index 部分）。之后我们再对这部分右移位 9bit，并打印成 10进制数，可以得到 128，这就是中间级 page directory 中 PTE 的序号。这与之前（4.4）介绍的内容是符合的。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012925232.png" alt="img"></p>
-<p>从标志位来看（fl 部分），最低一级 page directory 中的 PTE 有读写标志位，并且 Valid 标志位也设置了（4.3底部有标志位的介绍）。</p>
-<p><strong>内核会持续的按照这种方式，调用 kvmmap 来设置地址空间。之后会对 VIRTIO0、CLINT、PLIC、kernel text、kernel data、最后是 TRAMPOLINE 进行地址映射。</strong>最后我们还会调用 vmprint 打印完整的 kernel page directory，可以看出已经设置了很多 PTE。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220303100606521.png" alt="image-20220303100606521"></p>
-<p>这里就不过细节了，但是这些 PTE 构成了我们在 4.5 中看到的地址空间对应关系。</p>
-<blockquote>
-<p>学生：下面这两行内存不会越界吗？</p>
-</blockquote>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220303100546908.png" alt="image-20220303100546908"></p>
-<blockquote>
-<p>Frans：不会，这里 KERNBASE 是 <code>0x80000000</code>，这是内存开始的地址。kvmmap 的第三个参数是 size，etext 是 kernel text 的最后一个地址，etext - KERNBASE 会返回 kernel text 的字节数，我不确定这块有多大，大概是 60 - 90 个 page，这部分是 kernel 的 text 部分。PHYSTOP 是物理内存的最大位置，PHYSTOP - text 是 kernel 的 data 部分。会有足够的 DRAM 来完成这里的映射。</p>
-</blockquote>
-<h3 id="kvminithart-函数"><a href="#kvminithart-函数" class="headerlink" title="kvminithart 函数"></a>kvminithart 函数</h3><p>之后，kvminit 函数返回了，在 main 函数中，我们运行到了 kvminithart 函数。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013114725.png" alt="img"></p>
-<p>这个函数首先设置了 SATP 寄存器，<code>kernel_pagetable</code> 变量来自于 kvminit 第一行。所以这里实际上是内核告诉 MMU 来使用刚刚设置好的 page table。当这里这条指令执行之后，下一个指令的地址会发生什么？</p>
-<p>在这条指令之前，还不存在可用的 page table，所以也就不存在地址翻译。执行完这条指令之后，程序计数器（Program Counter）增加了 4。<strong>而之后的下一条指令被执行时，程序计数器会被内存中的 page table 翻译。</strong></p>
-<p>所以这条指令的执行时刻是一个非常重要的时刻。因为整个地址翻译从这条指令之后开始生效，之后的每一个使用的内存地址都可能对应到与之不同的物理内存地址。因为在这条指令之前，我们使用的都是物理内存地址，这条指令之后 page table 开始生效，所有的内存地址都变成了另一个含义，也就是虚拟内存地址。</p>
-<p>这里能正常工作的原因是值得注意的。因为前一条指令还是在物理内存中，而后一条指令已经在虚拟内存中了。比如，下一条指令地址是 <code>0x80001110</code> 就是一个虚拟内存地址。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013151324.png" alt="img"></p>
-<p><strong>为什么这里能正常工作呢？因为 kernel page 的映射关系中，虚拟地址到物理地址是完全相等的。所以，在我们打开虚拟地址翻译硬件之后，地址翻译硬件会将一个虚拟地址翻译到相同的物理地址。所以实际上，我们最终还是能通过内存地址执行到正确的指令，因为经过地址翻译 <code>0x80001110</code> 还是对应 <code>0x80001110</code>。</strong></p>
-<p>管理虚拟内存的一个难点是，一旦执行了类似于 SATP 这样的指令，你相当于将一个 page table 加载到了 SATP 寄存器，你的世界完全改变了。现在每一个地址都会被你设置好的 page table 所翻译。那么假设你的 page table 设置错误了，会发生什么呢？有人想回答这个问题吗？</p>
-<blockquote>
-<p>学生A回答：你可能会覆盖 kernel data。   </p>
-<p>学生B回答：会产生 page fault。</p>
-</blockquote>
-<p>是的，因为 page table 没有设置好，虚拟地址可能根本就翻译不了，那么内核会停止运行并 panic。所以，如果 page table 中有 bug，你将会看到奇怪的错误和崩溃，这导致了 page table 实验将会比较难。如果你不够小心，或者你没有完全理解一些细节，你可能会导致 kernel 崩溃，这将会花费一些时间和精力来追踪背后的原因。但这就是管理虚拟内存的一部分，因为对于一个这么强大的工具，如果出错了，相应的你也会得到严重的后果。我并不是要给你们泼凉水，哈哈。另一方面，这也很有乐趣，经过了 page table 实验，你们会真正理解虚拟内存是什么，虚拟内存能做什么。</p>
-<h3 id="walk-函数"><a href="#walk-函数" class="headerlink" title="walk 函数"></a>walk 函数</h3><blockquote>
-<p>学生提问：我对于 walk 函数有个问题，从代码看它返回了最高级 page table 的 PTE，但是它是怎么工作的呢？（注，应该是学生理解有误，walk 函数模拟了 MMU，返回的是 va 对应的最低级 page table 的 PTE）</p>
-</blockquote>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013346242.png" alt="img"></p>
-<blockquote>
-<p>Frans教授：这个函数会返回 page table 的 PTE，而内核可以读写 PTE。我来画个图，首先我们有一个 page directory，这个 page directory 有 512 个 PTE，最下面是 0，最上面是 511。</p>
-</blockquote>
-<blockquote>
-<p>这个函数的作用是返回某一个 PTE 的指针。</p>
-<p>这是个虚拟地址，它指向了这个 PTE。之后内核可以通过向这个地址写数据来操纵这条 PTE 执行的物理 page。当 page table 被加载到 SATP 寄存器，这里的更改就会生效。</p>
-<p>从代码看，这个函数从 L2 走到 L1 然后到 L0，如果参数 alloc 不为 0，且某一个 level 的 page table 不存在，这个函数会创建一个临时的 page table，将内容初始化为 0，并继续运行。所以最后总是返回的是最低一级的 page directory 的 PTE。</p>
-<p>如果参数 alloc 没有设置，那么在第一个 PTE 对应的下一级 page table 不存在时就会返回。</p>
-<p>学生提问：对于 walk 函数，我有一个比较困惑的地方，在写完 SATP 寄存器之后，内核还能直接访问物理地址吗？在代码里面看起来像是通过 page table 将虚拟地址翻译成了物理地址，但是这个时候 SATP 已经被设置了，得到的物理地址不会被认为是虚拟地址吗？</p>
-<p>Frans教授：让我们来看 <code>kvminithart</code> 函数，这里的 <code>kernel_page_table</code> 是一个物理地址，并写入到 SATP 寄存器中。从那以后，我们的代码运行在一个我们构建出来的地址空间中。在之前的 kvminit 函数中，kvmmap 会对每个地址或者每个 page 调用 walk 函数。所以你的问题是什么？</p>
-<p>学生：我想知道，在 SATP 寄存器设置完之后，walk 是不是还是按照相同的方式工作？</p>
-<p>Frans：是的。它还能工作的原因是，内核设置了虚拟地址等于物理地址的映射关系，这里很重要，因为很多地方能工作的原因都是因为内核设置的地址映射关系是相同的。</p>
-<p>学生：每一个进程的 SATP 寄存器存在哪？</p>
-<p>Frans：每个 CPU 核只有一个 SATP 寄存器，但是在每个 proc 结构体，如果你查看 <code>proc.h</code>，里面有一个指向 page table 的指针，这对应了进程的根 page table 物理内存地址。</p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/[object%20Object]/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/uploads/1.jpg">
-      <meta itemprop="name" content="Sam Shen">
-      <meta itemprop="description" content="share cs knowledge">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="AcKing">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">[object Object]<i class="fa fa-external-link-alt"></i></a>
-          
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2023-01-28 20:12:53 / Modified: 20:14:39" itemprop="dateCreated datePublished" datetime="2023-01-28T20:12:53+08:00">2023-01-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mit6-s081-os/" itemprop="url" rel="index"><span itemprop="name">mit6.s081 os</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Chapter-3"><a href="#Chapter-3" class="headerlink" title="Chapter 3"></a>Chapter 3</h1><h3 id="隔离性-isolation"><a href="#隔离性-isolation" class="headerlink" title="隔离性 isolation"></a>隔离性 isolation</h3><p>这一点主要体现在，multiplexing（CPU在多进程分时复用）和物理内存隔离。</p>
-<p>之前通过 <code>fork</code> 创建了进程。进程本身不是CPU，但是它们对应了CPU，它们使得你可以在CPU上运行计算任务。<strong>应用程序不能直接与CPU交互，只能与进程交互。</strong>操作系统内核会完成不同进程在CPU上的切换。所以，操作系统不是直接将CPU提供给应用程序，而是向应用程序提供 <code>进程</code>，进程抽象了CPU，这样操作系统才能在多个应用程序之间复用一个或者多个CPU。</p>
-<p>我们可以认为 exec 抽象了内存。当我们在执行 exec 系统调用的时候，我们会传入一个文件名，而这个文件名对应了一个应用程序的内存镜像。内存镜像里面包括了程序对应的指令，全局的数据。应用程序可以逐渐扩展自己的内存，但是应用程序并没有直接访问物理内存的权限，例如应用程序不能直接访问物理内存的 1000-2000 这段地址。不能直接访问的原因是，操作系统会提供内存隔离并控制内存，操作系统会在应用程序和硬件资源之间提供一个中间层。<strong>exec 是这样一种系统调用，它表明了应用程序不能直接访问物理内存。</strong></p>
-<p>另一个例子是文件，文件基本上来说抽象了磁盘。应用程序不会直接读写挂在计算机上的磁盘本身，并且在 Unix 中这也是不被允许的。在 Unix 中，与存储系统交互的唯一方式就是通过 files。Files 提供了非常方便的磁盘抽象，你可以对文件命名，读写文件等等。之后，操作系统会决定如何将文件与磁盘中的块对应，确保一个磁盘块只出现在一个文件中，并且确保用户A 不能操作用户B 的文件。通过 files 的抽象，可以实现不同用户之间和同一个用户的不同进程之间的文件强隔离。</p>
-<h3 id="防御性-defensive"><a href="#防御性-defensive" class="headerlink" title="防御性 defensive"></a>防御性 defensive</h3><p>当你在开发内核时，防御性是你必须掌握的一个思想。实际中的应用程序或许就是恶意的，这意味着我们需要在应用程序和操作系统之间提供强隔离性。</p>
-<p>简单来说，就是防止应用进程攻破内核区，一般两个手段：</p>
-<ul>
-<li>user&#x2F;kernel mode切换</li>
-<li>page table 即虚拟内存</li>
-</ul>
-<h3 id="硬件对于强隔离性的支持"><a href="#硬件对于强隔离性的支持" class="headerlink" title="硬件对于强隔离性的支持"></a>硬件对于强隔离性的支持</h3><p>举个例子，当一个应用程序尝试执行一条特殊权限指令，因为不允许在user mode执行特殊权限指令，处理器会拒绝执行这条指令。通常来说，这时会将控制权限从 user mode 切换到 kernel mode，当操作系统拿到控制权之后，或许会杀掉进程，因为应用程序执行了不该执行的指令。</p>
-<blockquote>
-<p>学生提问：那 BIOS 呢？BIOS 会在操作系统之前运行还是之后？</p>
-<p>Frans教授：BIOS 是一段计算机自带的代码，它会先启动，之后它会启动操作系统，所以BIOS需要是一段可被信任的代码，它最好是正确的，且不是恶意的。</p>
-<p>学生提问：之前提到，设置处理器中kernel mode的bit位的指令是一条特殊权限指令，那么一个用户程序怎么才能让内核执行任何内核指令？因为现在切换到kernel mode的指令都是一条特殊权限指令了，对于用户程序来说也没法修改那个bit位。</p>
-<p>Frans教授：你说的对，这也是我们想要看到的结果。可以这么来看这个问题，首先这里不是完全按照你说的方式工作，在RISC-V中，如果你在用户空间（user space）尝试执行一条特殊权限指令，用户程序会通过系统调用来切换到kernel mode。当用户程序执行系统调用，会通过ECALL触发一个软中断（software interrupt），软中断会查询操作系统预先设定的中断向量表，并执行中断向量表中包含的中断处理程序。中断处理程序在内核中，这样就完成了user mode到kernel mode的切换，并执行用户程序想要执行的特殊权限指令。</p>
-</blockquote>
-<p>处理器包含了 page table，而 page table 将虚拟内存地址与物理内存地址做了对应。</p>
-<p>每一个进程都会有自己独立的 page table，这样的话，每一个进程只能访问出现在自己 page table 中的物理内存。<strong>操作系统会设置 page table，使得每一个进程都有不重合的物理内存，这样一个进程就不能访问其他进程的物理内存</strong>，因为其他进程的物理内存都不在它的 page table 中。一个进程甚至都不能随意编造一个内存地址，然后通过这个内存地址来访问其他进程的物理内存。这样就给了我们内存的强隔离性。</p>
-<p>page table 定义了对于内存的视图，而每一个用户进程都有自己对于内存的独立视图。这给了我们非常强的内存隔离性。</p>
-<h3 id="User-x2F-Kernel-Mode-切换"><a href="#User-x2F-Kernel-Mode-切换" class="headerlink" title="User&#x2F;Kernel Mode 切换"></a>User&#x2F;Kernel Mode 切换</h3><p>我们可以认为 user&#x2F;kernel mode 是分隔用户空间和内核空间的边界，用户空间运行的程序运行在 user mode，内核空间的程序运行在 kernel mode，操作系统位于内核空间。</p>
-<p>我们需要有一种方式能够让应用程序可以将控制权转移给内核。在 RISC-V 中，有一个专门的指令用来实现这个功能，叫做 <code>ECALL</code>。<code>ECALL</code> 接收一个数字参数，当一个用户程序想要将程序执行的控制权转移到内核，它只需要执行 <code>ECALL</code> 指令，并传入一个数字。这里的数字参数代表了应用程序想要调用的系统调用。</p>
-<p>这里需要澄清的是，用户空间和内核空间的界限是一个硬性的界限，用户不能直接调用 <code>fork</code>，用户的应用程序执行系统调用的唯一方法就是通过 <code>ECALL</code> 指令。</p>
-<blockquote>
-<p>学生提问：操作系统在什么时候检查是否允许执行 <code>fork</code> 或者<code> write</code>？现在看起来应用程序只需要执行 <code>ECALL</code> 再加上系统调用对应的数字就能完成调用，但是内核在什么时候决定这个应用程序是否有权限执行特定的系统调用？</p>
-<p>Frans教授：是个好问题。原则上来说，在内核侧实现 <code>fork</code> 的位置可以实现任何的检查，例如检查系统调用的参数，并决定应用程序是否被允许执行 <code>fork</code> 系统调用。在 Unix 中，任何应用程序都能调用 fork，我们以 write 为例吧，<strong>write 的实现需要检查传递给 write 的地址（需要写入数据的指针）属于用户应用程序，这样内核才不会被欺骗向别的不属于应用程序的位置写入数据。</strong></p>
-<p>学生提问：当应用程序表现的恶意或者就是在一个死循环中，内核是如何夺回控制权限的？</p>
-<p>Frans教授：<strong>内核会通过硬件设置一个定时器，定时器到期之后会将控制权限从用户空间转移到内核空间</strong>，之后内核就有了控制能力并可以重新调度 CPU 到另一个进程中。我们接下来会看一些更加详细的细节。</p>
-</blockquote>
-<h3 id="宏内核与微内核"><a href="#宏内核与微内核" class="headerlink" title="宏内核与微内核"></a>宏内核与微内核</h3><p>内核有时候也被称为可被信任的计算空间（Trusted Computing Base），在一些安全的术语中也被称为 TCB。基本上来说，要被称为 TCB，内核首先要是正确且 bug-free 的。</p>
-<h4 id="宏内核"><a href="#宏内核" class="headerlink" title="宏内核"></a>宏内核</h4><p>大多数的 Unix 操作系统实现都运行在 kernel mode。比如，XV6 中，所有的操作系统服务都在 kernel mode 中，这种形式被称为 Monolithic Kernel Design（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Monolithic_kernel">宏内核</a>）。</p>
-<p>这里有几件事情需要注意：</p>
-<ul>
-<li>如果考虑Bug的话，宏内核不太好。在一个宏内核中，任何一个操作系统的Bug都有可能成为漏洞。因为我们现在在内核中运行了一个巨大的操作系统，出现Bug的可能性更大了。你们可以去查一些统计信息，平均每3000行代码都会有几个Bug，所以如果有许多行代码运行在内核中，那么出现严重Bug的可能性也变得更大。所以从安全的角度来说，在内核中有大量的代码是宏内核的缺点。</li>
-<li>另一方面，如果你去看一个操作系统，它包含了各种各样的组成部分，比如说文件系统，虚拟内存，进程管理，这些都是操作系统内实现了特定功能的子模块。宏内核的优势在于，<strong>因为这些子模块现在都位于同一个程序中，它们可以紧密的集成在一起，这样的集成提供很好的性能</strong>。例如 Linux，它就有很不错的性能。</li>
-</ul>
-<h4 id="微内核"><a href="#微内核" class="headerlink" title="微内核"></a>微内核</h4><p>另一种设计主要关注点是减少内核中的代码，它被称为 Micro Kernel Design（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Microkernel">微内核</a>）。在这种模式下，希望在 kernel mode 中运行尽可能少的代码。所以这种设计下还是有内核，但是内核只有非常少的几个模块，例如，内核通常会有一些 IPC 的实现或者是 Message passing；非常少的虚拟内存的支持，可能只支持了 page table；以及分时复用 CPU 的一些支持。</p>
-<p>某种程度上来说，这是一种好的设计。因为在内核中的代码的数量较小，<strong>更少的代码意味着更少的 Bug，微内核的问题在于性能更差</strong>，这里有两个方面需要考虑：</p>
-<ul>
-<li><p>在 user&#x2F;kernel mode 反复跳转带来的性能损耗。</p>
-</li>
-<li><p>在一个类似宏内核的紧耦合系统，各个组成部分，例如文件系统和虚拟内存系统，可以很容易的共享 page cache。而在微内核中，每个部分之间都很好的隔离开了，这种共享更难实现，进而导致更难在微内核中得到更高的性能。</p>
-</li>
-</ul>
-<h3 id="编译运行kernel"><a href="#编译运行kernel" class="headerlink" title="编译运行kernel"></a>编译运行kernel</h3><p>接下来我会切换到代码介绍，来看一下 XV6 是如何工作的。</p>
-<p>首先，我们来看一下代码结构，你们或许已经看过了。代码主要有三个部分组成：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226095531234.png" alt="image-20220226095531234"></p>
-<ul>
-<li>第一部分是 kernel ：我们可以 <code>ls kernel</code> 的内容，里面包含了基本上所有的内核文件。因为 XV6 是一个宏内核结构，这里所有的文件会被编译成一个叫做 <code>kernel</code> 的二进制文件，然后这个二进制文件会被运行在  kernle mode 中。</li>
-</ul>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226095603980.png" alt="image-20220226095603980"></p>
-<ul>
-<li>第二部分是 user ：这基本上是运行在 user mode 的程序。这也是为什么一个目录称为 kernel，另一个目录称为 user 的原因。</li>
-<li>第三部分是 mkfs ：它会创建一个空的文件镜像，我们会将这个镜像存在磁盘上，这样我们就可以直接使用一个空的文件系统。</li>
-</ul>
-<p>接下来，让我们不带 gdb 运行 XV6（make 会读取 Makefile 文件中的指令）。这里会编译文件，然后调用 QEMU（qemu-system-riscv64指令）。这里本质上是通过C语言来模拟仿真 RISC-V 处理器。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226095659801.png" alt="image-20220226095659801"></p>
-<p>我们来看传给QEMU的几个参数：</p>
-<ul>
-<li>-kernel：这里传递的是内核文件（kernel 目录下的 kernel 文件），这是将在 QEMU 中运行的程序文件。</li>
-<li>-m：这里传递的是 RISC-V 虚拟机将会使用的内存数量</li>
-<li>-smp：这里传递的是虚拟机可以使用的 CPU 核数</li>
-<li>-drive：传递的是虚拟机使用的磁盘驱动，这里传入的是 fs.img 文件</li>
-</ul>
-<p>直观来看，QEMU 是一个大型的开源C程序，你可以下载或者 <code>git clone</code> 它。<strong>但是在内部，在QEMU的主循环中，只在做一件事情：</strong></p>
-<ul>
-<li>读取 4 字节或者 8 字节的 RISC-V 指令。</li>
-<li>解析RISC-V指令，并找出对应的操作码（op code）。我们之前在看 <code>kernel.asm</code> 的时候，看过一些操作码的二进制版本。通过解析，或许可以知道这是一个 ADD 指令，或者是一个 SUB 指令。</li>
-<li>之后，在软件中执行相应的指令。</li>
-</ul>
-<h3 id="XV6-启动过程"><a href="#XV6-启动过程" class="headerlink" title="XV6 启动过程"></a>XV6 启动过程</h3><p>接下来，我会系统的介绍 XV6，让你们对 XV6 的结构有个大概的了解。在后面的课程，我们会涉及到更多的细节。</p>
-<p>首先，我会启动 QEMU，并打开 gdb。本质上来说 QEMU 内部有一个 gdb server，当我们启动之后，QEMU 会等待 gdb 客户端连接。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100740533.png" alt="image-20220226100740533"></p>
-<p>在连接上之后，我会在程序的入口处设置一个断点，因为我们知道这是 QEMU 会跳转到的第一个指令。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100811732.png" alt="image-20220226100811732"></p>
-<p>设置完断点之后，我运行程序，可以发现代码并没有停在 0x8000000（见3.7 <code>kernel.asm</code> 中，0x80000000 是程序的起始位置），而是停在了 <code>0x8000000a</code>。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100839203.png" alt="image-20220226100839203"></p>
-<p>如果我们查看kernel的汇编文件，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100856581.png" alt="image-20220226100856581"></p>
-<p>我们可以看到，在地址 <code>0x8000000a</code> 读取了控制系统寄存器（Control System Register）mhartid，并将结果加载到了 <code>a1</code> 寄存器。所以QEMU会模拟执行这条指令，之后执行下一条指令。</p>
-<p>地址 <code>0x80000000</code> 是一个被QEMU认可的地址。也就是说如果你想使用QEMU，那么第一个指令地址必须是它。所以，我们会让内核加载器从那个位置开始加载内核。如果我们查看 <code>kernel.ld</code>，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226100940653.png" alt="image-20220226100940653"></p>
-<p>我们可以看到，这个文件定义了内核是如何被加载的，从这里也可以看到，内核使用的起始地址就是QEMU指定的 0x80000000 这个地址。这就是我们操作系统最初运行的步骤。</p>
-<p>回到 gdb，我们可以看到 gdb 也显示了指令的二进制编码</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101014271.png" alt="image-20220226101014271"></p>
-<p>可以看出，csrr 是一个4字节的指令，而 addi 是一个 2 字节的指令。</p>
-<p>我们这里可以看到，XV6 从 <code>entry.s</code> 开始启动，这个时候没有内存分页，没有隔离性，并且运行在 machine mode。XV6 会尽可能快的跳转到 kernel mode 或者说是 supervisor mode。我们在 main 函数设置一个断点，main 函数已经运行在supervisor mode 了。接下来我运行程序，代码会在断点，也就是 main 函数的第一条指令停住。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101059110.png" alt="image-20220226101059110"></p>
-<p>上图中，左下是gdb的断点显示，右边是main函数的源码。接下来，我想运行在 gdb 的 <code>layout split</code> 模式：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101200955.png" alt="image-20220226101200955"></p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101214918.png" alt="image-20220226101214918"></p>
-<p>从这个视图可以看出 gdb 要执行的下一条指令是什么，断点具体在什么位置。</p>
-<p>这里我只在一个 CPU 上运行 QEMU（见最初的 make 参数），这样会使得gdb调试更加简单。因为现在只指定了一个 CPU 核，QEMU只会仿真一个核，我可以单步执行程序（<strong>在单核或者单线程场景下，单个断点就可以停止整个程序的运行</strong>）。</p>
-<p>通过在 gdb 中输入 n，可以挑到下一条指令。这里调用了一个名为 <code>consoleinit</code> 的函数，它的工作与你想象的完全一样，也就是设置好console。一旦 <code>console</code> 设置好了，接下来可以向 <code>console</code> 打印输出（代码16、17行）。执行完16、17行之后，我们可以在 QEMU 看到相应的输出。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101310563.png" alt="image-20220226101310563"></p>
-<p>除了 console 之外，还有许多代码来做初始化。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101330404.png" alt="img"></p>
-<ul>
-<li>kinit：设置好页表分配器（page allocator）</li>
-<li>kvminit：设置好虚拟内存，这是下节课的内容</li>
-<li>kvminithart：打开页表，也是下节课的内容</li>
-<li>processinit：设置好初始进程或者说设置好进程表单</li>
-<li>trapinit&#x2F;trapinithart：设置好user&#x2F;kernel mode转换代码</li>
-<li>plicinit&#x2F;plicinithart：设置好中断控制器PLIC（Platform Level Interrupt Controller），我们后面在介绍中断的时候会详细的介绍这部分，这是我们用来与磁盘和console交互方式</li>
-<li>binit：分配buffer cache</li>
-<li>iinit：初始化inode缓存</li>
-<li>fileinit：初始化文件系统</li>
-<li>virtio_disk_init：初始化磁盘</li>
-<li>userinit：最后当所有的设置都完成了，操作系统也运行起来了，会通过 userinit 运行第一个进程，这里有点意思，接下来我们看一下userinit</li>
-</ul>
-<blockquote>
-<p>学生提问：这里的初始化函数的调用顺序重要吗？</p>
-<p>Frans教授：重要，哈哈。一些函数必须在另一些函数之后运行，某几个函数的顺序可能不重要，但是对它们又需要在其他的一些函数之后运行。</p>
-</blockquote>
-<p>可以通过 gdb 的 s 指令，跳到 <code>userinit</code> 内部。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101414105.png" alt="img"></p>
-<p>上图是 <code>userinit</code> 函数，右边是源码，左边是 gdb 视图。<code>userinit</code> 有点像是胶水代码（Glue code，胶水代码不实现具体的功能，只是为了适配不同的部分而存在），它利用了 XV6 的特性，并启动了第一个进程。我们总是需要有一个用户进程在运行，这样才能实现与操作系统的交互，所以这里需要一个小程序来初始化第一个用户进程。这个小程序定义在 <code>initcode</code> 中。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101514511.png" alt="image-20220226101514511"></p>
-<p>这里直接是程序的二进制形式，它会链接或者在内核中直接静态定义。实际上，这段代码对应了下面的汇编程序。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101527673.png" alt="image-20220226101527673"></p>
-<p>这个汇编程序中，它首先将 init 中的地址加载到 a0（la a0, init），argv 中的地址加载到 a1（la a1, argv），exec 系统调用对应的数字加载到 a7（li a7, SYS_exec），最后调用 ECALL。所以这里执行了 3 条指令，之后在第4条指令将控制权交给了操作系统。</p>
-<p>如果我在 syscall 中设置一个断点，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101628075.png" alt="img"></p>
-<p>并让程序运行起来。userinit 会创建初始进程，返回到用户空间，执行刚刚介绍的3条指令，再回到内核空间。这里是任何XV6用户会使用到的第一个系统调用。让我们来看一下会发生什么。通过在 gdb 中执行 <code>c</code>，让程序运行起来，我们现在进入到了 syscall 函数。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101648651.png" alt="img"></p>
-<p>我们可以查看 syscall 的代码，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101744620.png" alt="img"></p>
-<p><code>num = p-&gt;trapframe-&gt;a7</code> 会读取使用的系统调用对应的整数。当代码执行完这一行之后，我们可以在 gdb 中打印 <code>num</code>，可以看到是7。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101815494.png" alt="img"></p>
-<p>如果我们查看 <code>syscall.h</code>，可以看到 7 对应的是 exec 系统调用。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226101832443.png" alt="img"></p>
-<p>所以，这里本质上是告诉内核，某个用户应用程序执行了 ECALL 指令，并且想要调用 exec 系统调用。</p>
-<p><code>p-&gt;trapframe-&gt;a0 = syscall[num]()</code> 这一行是实际执行系统调用。这里可以看出，num 用来索引一个数组，这个数组是一个函数指针数组，可以预期的是 <code>syscall[7]</code> 对应了 exec 的入口函数。我们跳到这个函数中去，可以看到，我们现在在 <code>sys_exec</code> 函数中。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226102020008.png" alt="img"></p>
-<p><code>sys_exec</code> 中的第一件事情是从用户空间读取参数，它会读取 path，也就是要执行程序的文件名。这里首先会为参数分配空间，然后从用户空间将参数拷贝到内核空间。之后我们打印 path，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226102055734.png" alt="img"></p>
-<p>可以看到传入的就是 init 程序。所以，综合来看，initcode 完成了通过 exec 调用 init 程序。让我们来看看 init 程序，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226102131715.png" alt="img"></p>
-<p>init 会为用户空间设置好一些东西，比如配置好 console，调用 fork，并在 fork 出的子进程中执行 shell。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220226102158685.png" alt="img"></p>
-<p>最终的效果就是 shell 运行起来了。如果我再次运行代码，我还会陷入到 syscall 中的断点，并且同样也是调用 exec 系统调用，只是这次是通过 exec 运行 shell。当 shell 运行起来之后，我们可以从 QEMU 看到 shell。</p>
-<p>这里简单的介绍了一下 XV6 是如何从零开始直到第一个 shell 程序运行起来。并且我们也看了一下第一个系统调用是在什么时候发生的。我们并没有看系统调用背后的具体机制，这个在后面会介绍。但是目前来说，这些对于你们完成这周的 syscall lab 是足够了。这些就是你们在实验中会用到的部分。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/[object%20Object]/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/uploads/1.jpg">
-      <meta itemprop="name" content="Sam Shen">
-      <meta itemprop="description" content="share cs knowledge">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="AcKing">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/%5Bobject%20Object%5D" class="post-title-link post-title-link-external" itemprop="url">[object Object]<i class="fa fa-external-link-alt"></i></a>
-          
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2023-01-28 20:12:53 / Modified: 20:14:20" itemprop="dateCreated datePublished" datetime="2023-01-28T20:12:53+08:00">2023-01-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mit6-s081-os/" itemprop="url" rel="index"><span itemprop="name">mit6.s081 os</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Chapter-1"><a href="#Chapter-1" class="headerlink" title="Chapter 1"></a>Chapter 1</h1><h3 id="主要内容"><a href="#主要内容" class="headerlink" title="主要内容"></a>主要内容</h3><p>第一节课主要是介绍课程内容，考核方式，以及宏观讲述os的结构，实际内容主要讲解若干系统调用。</p>
-<p>由于系统调用是操作系统提供的服务的接口，所以系统调用长什么样，应用程序期望从系统调用得到什么返回，系统调用是怎么工作的，这些还是挺重要的。</p>
-<p>整个课程中，XV6 运行在一个 RISC-V 微处理器上，实验中我们会在 QEMU 模拟器上运行 XV6。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225010755776.png" alt="image-20220225010755776"></p>
-<h3 id="read"><a href="#read" class="headerlink" title="read()"></a>read()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>    </span></span><br><span class="line"><span class="function"><span class="type">ssize_t</span> <span class="title">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span></span>;  </span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>第一个参数是文件描述符，指向一个之前打开的文件。Shell 会确保默认情况下，当一个程序启动时，文件描述符 0 连接到标准输入，文件描述符 1 连接到了标准输出。所以我可以通过这个程序看到控制台打印我的输入。当然，这里的程序会预期文件描述符已经被 Shell 打开并设置好。这里的 0，1 文件描述符是非常普遍的Unix 风格，许多的 Unix 系统都会从文件描述符 0 读取数据，然后向文件描述符 1 写入数据。</p>
-</li>
-<li><p>第二个参数是指向某段内存的指针，程序可以通过指针对应的地址读取内存中的数据。在代码第 10 行，程序在栈里面申请了 64 字节的内存，并将指针保存在 buf 中，这样 read 可以将数据保存在这64字节中。</p>
-</li>
-<li><p>read 的第三个参数是代码想读取的最大长度，<code>sizeof(buf)</code> 表示，最多读取 64 字节的数据，所以这里的read 最多只能从连接到文件描述符 0 的设备，也就是标准输入中，读取 64 字节的数据。</p>
-</li>
-</ul>
-<p>返回值情况：</p>
-<ul>
-<li><p>read的返回值可能是读到的字节数，在上面的截图中也就是 6（ <code>xyzzy</code> 加上结束符）</p>
-</li>
-<li><p>read可能从一个文件读数据，如果到达了文件的结尾没有更多的内容了，read会返回 0</p>
-</li>
-<li><p>如果出现了一些错误，比如文件描述符不存在，read或许会返回 -1。</p>
-<blockquote>
-<p> 在后面的很多例子中，比如第16行，我都没有通过检查系统调用的返回来判断系统调用是否出错，但是你应该比我更加小心，你应该清楚系统调用通常是通过返回 -1 来表示错误，你应该检查所有系统调用的返回值以确保没有错误，这点和我们计算机系统安全的老师观点一致，值得重视。</p>
-</blockquote>
-</li>
-</ul>
-<h3 id="open"><a href="#open" class="headerlink" title="open()"></a>open()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">open</span><span class="params">(<span class="type">const</span> <span class="type">char</span> * pathname, <span class="type">int</span> flags, <span class="type">mode_t</span> mode)</span></span>; </span><br></pre></td></tr></table></figure>
-
-<p>代码中的第11行，执行了 open 系统调用，将文件名 <code>output.txt</code> 作为第一个参数传入，第二个参数是一些标志位，用来告诉 open 系统调用在内核中的实现：我们将要创建并写入一个文件。</p>
-<p>open 系统调用会返回一个新分配的文件描述符，这里的文件描述符是一个小的数字，可能是2，3，4或者其他的数字。</p>
-<h3 id="wirte"><a href="#wirte" class="headerlink" title="wirte()"></a>wirte()</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//函数向打开的设备或文件中写数据。</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>   </span></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">write</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span>;  </span><br></pre></td></tr></table></figure>
-
-<p>之后，这个文件描述符作为第一个参数被传到了 write，write 的第二个参数是数据的指针，第三个参数是要写入的字节数，数据被写入到了文件描述符对应的文件中。</p>
-<p>每个进程都有一张文件描述符的表单，且<strong>这个文件描述符空间独立于其他进程</strong>，其中每一项指向不同的文件。文件描述符是独立的，但是不同进程可以同时打开相同的文件，且其文件描述符不一定相同，相同的文件描述符也可能指向不同的文件。</p>
-<h3 id="shell"><a href="#shell" class="headerlink" title="shell"></a>shell</h3><p>比如，当我输入 <code>ls</code> 时，实际的意义是我要求 Shell 运行名为 <code>ls</code> 的程序，文件系统中会有一个文件名为 <code>ls</code>，这个文件中包含了一些计算机指令，所以实际上，当我输入 <code>ls</code> 时，我是在<strong>要求 shell 运行位于文件ls内的这些计算机指令。</strong></p>
-<p><code>grep x</code> 会搜索输入中包含 <code>x</code> 的行，我可以告诉 shell 将输入重定向到文件 <code>out</code>，这样我们就可以查看 <code>out</code> 中的 <code>x</code>。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011302133.png" alt="image-20220225011302133"></p>
-<h3 id="fork"><a href="#fork" class="headerlink" title="fork()"></a>fork()</h3><p>fork() 系统调用是重点，lab中会用到。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011344942.png" alt="image-20220225011344942">在第12行，我们调用了 fork。</p>
-<p><code>fork</code> 会拷贝当前进程的内存，并创建一个新的进程，这里的内存包含了进程的指令和数据。之后，我们就有了两个拥有完全一样内存的进程。</p>
-<p>fork系统调用在两个进程中都会返回，在原始的进程中，fork系统调用会返回大于0的整数，这个是新创建进程的ID，而在新创建的进程中，fork系统调用会返回 0。</p>
-<p>所以即使两个进程的内存是完全一样的，我们还是可以通过 fork 的返回值区分旧进程和新进程。</p>
-<blockquote>
-<p>学生提问：<code>fork</code> 产生的子进程是不是总是与父进程是一样的？它们有可能不一样吗？</p>
-<p>Robert教授：在XV6中，除了 <code>fork</code> 的返回值，两个进程是一样的。两个进程的指令是一样的，数据是一样的，栈是一样的，同时，两个进程又有各自独立的地址空间，它们都认为自己的内存从0开始增长，但这里是不同的内存。 在一个更加复杂的操作系统，有一些细节我们现在并不关心，这些细节偶尔会导致父子进程不一致，但是在XV6中，父子进程除了fork的返回值，其他都是一样的。</p>
-<p>除了内存是一样的以外，<strong>文件描述符的表单也从父进程拷贝到子进程。</strong>所以如果父进程打开了一个文件，子进程可以看到同一个文件描述符，尽管子进程看到的是一个文件描述符的表单的拷贝。除了拷贝内存以外，fork还会拷贝文件描述符表单这一点还挺重要的。</p>
-</blockquote>
-<p>当我们在 Shell 中运行东西的时候，Shell 实际上会创建一个新的进程来运行你输入的每一个指令。所以，当我输入 ls 时，我们需要 Shell 通过 fork 创建一个进程来运行ls，这里需要某种方式来让这个新的进程来运行ls程序中的指令，加载名为ls的文件中的指令（也就是后面的exec系统调用）。</p>
-<h3 id="exec"><a href="#exec" class="headerlink" title="exec()"></a>exec()</h3><p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011530170.png" alt="image-20220225011530170"></p>
-<p>代码会执行exec系统调用，这个系统调用<strong>会从指定的文件中读取并加载指令，并替代当前调用进程的指令。</strong>从某种程度上来说，这样相当于<strong>丢弃了调用进程的内存，并开始执行新加载的指令。</strong></p>
-<p>所以第12行的系统调用exec会有这样的效果：操作系统从名为 <code>echo</code> 的文件中加载指令到当前的进程中，并替换了当前进程的内存，之后开始执行这些新加载的指令。同时，你可以传入命令行参数，exec 允许你传入一个命令行参数的数组，这里就是一个C语言中的指针数组，在上面代码的第10行设置好了一个字符指针的数组，这里的字符指针本质就是一个字符串（string）。</p>
-<p>所以这里等价于运行echo命令，并带上“this is echo” 这三个参数。所以当我运行exec文件：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011637130.png" alt="image-20220225011637130"></p>
-<ul>
-<li><p><strong>exec 系统调用会保留当前的文件描述符表单</strong>。所以任何在 exec 系统调用之前的文件描述符，例如0，1，2等，它们在新的程序中表示相同的东西。</p>
-</li>
-<li><p><strong>通常来说 exec 系统调用不会返回，因为 exec 会完全替换当前进程的内存，相当于当前进程不复存在了，所以exec系统调用已经没有地方能返回了。</strong></p>
-</li>
-</ul>
-<p>所以，exec 系统调用从文件中读取指令，执行这些指令，然后就没有然后了。exec 系统调用只会当出错时才会返回，因为某些错误会阻止操作系统为你运行文件中的指令，例如程序文件根本不存在，因为 exec 系统调用不能找到文件，exec 会返回 <code>-1</code> 来表示：出错了，我找不到文件。所以通常来说 exec 系统调用不会返回，它只会在kernel 不能运行相应的文件时返回。</p>
-<blockquote>
-<p>学生提问：argv 中的最后一个 0 是什么意思？</p>
-<p>Robert教授：它标记了数组的结尾，我们将 0 作为最后一个指针。argv 中的每一个字符串实际上是一块包含了数据的内存指针，但是第 5 个元素是 0，通常来说指针 0 是一个 NULL 指针，它只表明结束。所以内核中的代码会遍历这里的数组，直到它找到了值为0的指针。</p>
-</blockquote>
-<p>展示一个 <code>forkexec.c</code> 程序：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011753270.png" alt="image-20220225011753270"></p>
-<p>在这个程序中的第12行，调用了fork。子进程从第14行开始，我们在子进程中与前一个程序一样调用exec。子进程会用echo命令来代替自己，echo执行完成之后就退出。之后父进程重新获得了控制。fork会在父进程中返回大于0的值，父进程会继续在第19行执行。</p>
-<p>Unix提供了一个wait系统调用，如第20行所示。<strong>wait会等待之前创建的子进程退出。</strong>当我在命令行执行一个指令时，我们一般会希望shell等待指令执行完成。所以wait系统调用，使得父进程可以等待任何一个子进程返回。</p>
-<p><strong>这里wait的参数status，是一种让退出的子进程以一个整数（32 bit的数据）的格式与等待的父进程通信方式。所以在第17行，exit的参数是1，操作系统会将1从退出的子进程传递到第20行，也就是等待的父进程处。&amp;status，是将status对应的地址传递给内核，内核会向这个地址写入子进程向exit传入的参数。</strong></p>
-<blockquote>
-<p>此处贴一下我的理解， <code>wait(&amp;status)</code> 在父进程中调用，目的是让子进程把他的 <code>exit()</code> 状态码存储到 <code>status</code> 变量中。</p>
-</blockquote>
-<p>Unix 中的风格是，如果一个程序成功的退出了，那么exit的参数会是0，如果出现了错误，那么就会像第17行一样，会向exit传递1。所以，如果你关心子进程的状态的话，父进程可以读取wait的参数，并决定子进程是否成功的完成了。</p>
-<blockquote>
-<p>注意，上面是一种常用写法，先调用 <code>fork</code> ，再在子进程中调用 <code>exec</code> 。这里实际上有些浪费， <code>fork</code> 首先拷贝了整个父进程的内存，但是随后执行的 <code>exec</code> 将这整个拷贝丢弃了，并且用将要运行的文件替换了原来的内容。</p>
-<p>某种程度上来说这里的拷贝操作浪费了，因为所有拷贝的内存都被丢弃并被 <code>exec</code> 替换。在大型程序中这里的影响会比较明显。如果你运行了一个几 GB 的程序，并且调用 <code>fork</code> ，那么实际就会拷贝所有的内存，可能会要消耗将近 1 秒钟来完成拷贝，这可能会是个问题。</p>
-<p>之后的课程会实现一些优化，比如说 <code>copy-on-write fork</code> ，这种方式会消除 <code>fork</code> 的几乎所有的明显的低效，而只拷贝执行 <code>exec</code> 所需要的内存，这里需要很多涉及到虚拟内存系统的技巧。你可以构建一个 <code>fork</code> ，对于内存实行懒拷贝，通常来说 fork 之后立刻是 exec，这样你就不用实际的拷贝，因为子进程实际上并没有使用大部分的内存。</p>
-</blockquote>
-<blockquote>
-<p>学生提问：当我们说子进程从父进程拷贝了所有的内存，这里具体指的是什么呢？是不是说子进程需要重新定义变量之类的？</p>
-<p>Robert教授：在编译之后， C 程序就是一些在内存中的指令，这些指令存在于内存中。所以这些指令可以被拷贝，因为它们就是<strong>内存中的字节</strong>，它们可以被拷贝到别处。通过一些有关虚拟内存的技巧，可以使得子进程的内存与父进程的内存一样，这里实际就是将父进程的内存镜像拷贝给子进程，并在子进程中执行。</p>
-<p>实际上，当我们在看 C 程序时，你应该认为它们就是一些机器指令，这些机器指令就是内存中的数据，所以可以被拷贝。</p>
-<p>学生提问：如果父进程有多个子进程，wait 是不是会在第一个子进程完成时就退出？这样的话，还有一些与父进程交错运行的子进程，是不是需要有多个wait来确保所有的子进程都完成？</p>
-<p>Robert教授：是的，<strong>如果一个进程调用fork两次，如果它想要等两个子进程都退出，它需要调用wait两次。</strong>每个wait会在一个子进程退出时立即返回。当wait返回时，你实际上没有必要知道哪个子进程退出了，但是<strong>wait返回了子进程的进程号</strong>，所以在wait返回之后，你就可以知道是哪个子进程退出了。</p>
-</blockquote>
-<h3 id="IO重定向"><a href="#IO重定向" class="headerlink" title="IO重定向"></a>IO重定向</h3><p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225012018361.png" alt="image-20220225012018361"></p>
-<p>Shell 之所以有这样的能力，是因为 Shell 首先会像第 13 行一样 fork，然后在子进程中，Shell改变了文件描述符。文件描述符1通常是进程用来作为输出的（也就是控制台的标准输出），Shell会将文件描述符1改为output文件，之后再运行你的指令。同时，父进程的文件描述符1并没有改变。所以这里先fork，再更改子进程的文件描述符，是Unix中的常见的用来重定向指令的输入输出的方法，这种方法同时又不会影响父进程的输入输出。因为我们不会想要重定向Shell的输出，我们只想重定向子进程的输出。</p>
-<p>我们可以看到预期的输出。代码第15行的close(1)的意义是，我们希望文件描述符1指向一个其他的位置。也就是说，在子进程中，我们不想使用原本指向console输出的文件描述符1。</p>
-<p>代码第16行的open一定会返回1，因为open会返回当前进程未使用的最小文件描述符序号。因为我们刚刚关闭了文件描述符1，而文件描述符0还对应着console的输入，所以open一定可以返回1。在代码第16行之后，文件描述符1与文件output.txt关联。</p>
-<p>这个例子同时也演示了分离fork和exec的好处。fork和exec是分开的系统调用，意味着在子进程中有一段时间，fork返回了，但是exec还没有执行，子进程仍然在运行父进程的指令。所以这段时间，尽管指令是运行在子进程中，但是这些指令仍然是父进程的指令，所以父进程仍然可以改变东西，直到代码执行到了第19行。这里fork和exec之间的间隔，提供了Shell修改文件描述符的可能。</p>
 
       
     </div>
