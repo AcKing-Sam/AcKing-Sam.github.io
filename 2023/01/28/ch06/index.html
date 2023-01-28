@@ -23,7 +23,7 @@
   <meta name="description" content="Chapter 6 isolation &amp; syscallTrap 机制今天我想讨论一下，程序运行是完成用户空间和内核空间的切换。每当：  程序执行系统调用 程序出现了类似 page fault 、运算时除以 0 的错误 一个设备触发了中断使得当前程序运行需要响应内核设备驱动  都会发生这样的切换 Trap ：用户空间和内核空间的切换 系统总会频繁的切换到内核中，所以 trap 机制要尽可">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mit6.s081-ch6">
-<meta property="og:url" content="http://acking.cc/en/mit6.s081-ch6/index.html">
+<meta property="og:url" content="http://acking.cc/2023/01/28/ch06/index.html">
 <meta property="og:site_name" content="AcKing">
 <meta property="og:description" content="Chapter 6 isolation &amp; syscallTrap 机制今天我想讨论一下，程序运行是完成用户空间和内核空间的切换。每当：  程序执行系统调用 程序出现了类似 page fault 、运算时除以 0 的错误 一个设备触发了中断使得当前程序运行需要响应内核设备驱动  都会发生这样的切换 Trap ：用户空间和内核空间的切换 系统总会频繁的切换到内核中，所以 trap 机制要尽可">
 <meta property="og:locale" content="en_US">
@@ -92,7 +92,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220304020140746.png">
 
-<link rel="canonical" href="http://acking.cc/en/mit6.s081-ch6/">
+<link rel="canonical" href="http://acking.cc/2023/01/28/ch06/">
 
 
 <script id="page-configurations">
@@ -226,7 +226,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/mit6.s081-ch6/">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/2023/01/28/ch06/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/uploads/1.jpg">
@@ -659,10 +659,13 @@
 
         
     <div class="post-nav">
-      <div class="post-nav-item"></div>
       <div class="post-nav-item">
-    <a href="/en/mit6.s081-ch8/" rel="next" title="mit6.s081-ch8">
-      mit6.s081-ch8 <i class="fa fa-chevron-right"></i>
+    <a href="/2023/01/28/ch08/" rel="prev" title="mit6.s081-ch8">
+      <i class="fa fa-chevron-left"></i> mit6.s081-ch8
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2023/01/28/ch04/" rel="next" title="mit6.s081-ch4">
+      mit6.s081-ch4 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
