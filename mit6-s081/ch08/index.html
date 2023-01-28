@@ -23,7 +23,7 @@
   <meta name="description" content="chapter 8 Page FaultPage Fault basics今天的课程内容是 page fault，以及通过 page fault 可以实现的一系列虚拟内存功能。这里相关的功能有：  lazy allocation 这是下一个 lab 的内容 copy-on-write fork demand paging memory mapped files  几乎所有稍微正经的操作系统都实现了">
 <meta property="og:type" content="article">
 <meta property="og:title" content="mit6.s081-ch8">
-<meta property="og:url" content="http://acking.cc/2023/01/28/ch08/index.html">
+<meta property="og:url" content="http://acking.cc/mit6-s081/ch08/index.html">
 <meta property="og:site_name" content="AcKing">
 <meta property="og:description" content="chapter 8 Page FaultPage Fault basics今天的课程内容是 page fault，以及通过 page fault 可以实现的一系列虚拟内存功能。这里相关的功能有：  lazy allocation 这是下一个 lab 的内容 copy-on-write fork demand paging memory mapped files  几乎所有稍微正经的操作系统都实现了">
 <meta property="og:locale" content="en_US">
@@ -52,14 +52,14 @@
 <meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306192556016.png">
 <meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306192814771.png">
 <meta property="article:published_time" content="2023-01-27T16:00:00.000Z">
-<meta property="article:modified_time" content="2023-01-28T12:43:43.116Z">
+<meta property="article:modified_time" content="2023-01-28T12:45:25.696Z">
 <meta property="article:author" content="Sam Shen">
 <meta property="article:tag" content="mit6.s081">
 <meta property="article:tag" content="OS">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184054218.png">
 
-<link rel="canonical" href="http://acking.cc/2023/01/28/ch08/">
+<link rel="canonical" href="http://acking.cc/mit6-s081/ch08/">
 
 
 <script id="page-configurations">
@@ -193,7 +193,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://acking.cc/2023/01/28/ch08/">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/mit6-s081/ch08/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/uploads/1.jpg">
@@ -217,7 +217,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:43:43" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:45:25" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -226,10 +226,6 @@
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
                   <a href="/categories/mit6-s081/" itemprop="url" rel="index"><span itemprop="name">mit6.s081</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mit6-s081/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
                 </span>
             </span>
 
@@ -531,7 +527,7 @@
     <div class="post-nav">
       <div class="post-nav-item"></div>
       <div class="post-nav-item">
-    <a href="/2023/01/28/ch06/" rel="next" title="mit6.s081-ch6">
+    <a href="/mit6-s081/ch06/" rel="next" title="mit6.s081-ch6">
       mit6.s081-ch6 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
@@ -615,7 +611,7 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-count">1</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
