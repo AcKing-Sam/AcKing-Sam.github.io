@@ -164,168 +164,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://acking.cc/2023/01/28/ch01/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/uploads/1.jpg">
-      <meta itemprop="name" content="Sam Shen">
-      <meta itemprop="description" content="share cs knowledge">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="AcKing">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/mit6.s081-ch1" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch1<i class="fa fa-external-link-alt"></i></a>
-          
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:35:57" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mit6-s081/" itemprop="url" rel="index"><span itemprop="name">mit6.s081</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/mit6-s081/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Chapter-1"><a href="#Chapter-1" class="headerlink" title="Chapter 1"></a>Chapter 1</h1><h3 id="主要内容"><a href="#主要内容" class="headerlink" title="主要内容"></a>主要内容</h3><p>第一节课主要是介绍课程内容，考核方式，以及宏观讲述os的结构，实际内容主要讲解若干系统调用。</p>
-<p>由于系统调用是操作系统提供的服务的接口，所以系统调用长什么样，应用程序期望从系统调用得到什么返回，系统调用是怎么工作的，这些还是挺重要的。</p>
-<p>整个课程中，XV6 运行在一个 RISC-V 微处理器上，实验中我们会在 QEMU 模拟器上运行 XV6。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225010755776.png" alt="image-20220225010755776"></p>
-<h3 id="read"><a href="#read" class="headerlink" title="read()"></a>read()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>    </span></span><br><span class="line"><span class="function"><span class="type">ssize_t</span> <span class="title">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span></span>;  </span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>第一个参数是文件描述符，指向一个之前打开的文件。Shell 会确保默认情况下，当一个程序启动时，文件描述符 0 连接到标准输入，文件描述符 1 连接到了标准输出。所以我可以通过这个程序看到控制台打印我的输入。当然，这里的程序会预期文件描述符已经被 Shell 打开并设置好。这里的 0，1 文件描述符是非常普遍的Unix 风格，许多的 Unix 系统都会从文件描述符 0 读取数据，然后向文件描述符 1 写入数据。</p>
-</li>
-<li><p>第二个参数是指向某段内存的指针，程序可以通过指针对应的地址读取内存中的数据。在代码第 10 行，程序在栈里面申请了 64 字节的内存，并将指针保存在 buf 中，这样 read 可以将数据保存在这64字节中。</p>
-</li>
-<li><p>read 的第三个参数是代码想读取的最大长度，<code>sizeof(buf)</code> 表示，最多读取 64 字节的数据，所以这里的read 最多只能从连接到文件描述符 0 的设备，也就是标准输入中，读取 64 字节的数据。</p>
-</li>
-</ul>
-<p>返回值情况：</p>
-<ul>
-<li><p>read的返回值可能是读到的字节数，在上面的截图中也就是 6（ <code>xyzzy</code> 加上结束符）</p>
-</li>
-<li><p>read可能从一个文件读数据，如果到达了文件的结尾没有更多的内容了，read会返回 0</p>
-</li>
-<li><p>如果出现了一些错误，比如文件描述符不存在，read或许会返回 -1。</p>
-<blockquote>
-<p> 在后面的很多例子中，比如第16行，我都没有通过检查系统调用的返回来判断系统调用是否出错，但是你应该比我更加小心，你应该清楚系统调用通常是通过返回 -1 来表示错误，你应该检查所有系统调用的返回值以确保没有错误，这点和我们计算机系统安全的老师观点一致，值得重视。</p>
-</blockquote>
-</li>
-</ul>
-<h3 id="open"><a href="#open" class="headerlink" title="open()"></a>open()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">open</span><span class="params">(<span class="type">const</span> <span class="type">char</span> * pathname, <span class="type">int</span> flags, <span class="type">mode_t</span> mode)</span></span>; </span><br></pre></td></tr></table></figure>
-
-<p>代码中的第11行，执行了 open 系统调用，将文件名 <code>output.txt</code> 作为第一个参数传入，第二个参数是一些标志位，用来告诉 open 系统调用在内核中的实现：我们将要创建并写入一个文件。</p>
-<p>open 系统调用会返回一个新分配的文件描述符，这里的文件描述符是一个小的数字，可能是2，3，4或者其他的数字。</p>
-<h3 id="wirte"><a href="#wirte" class="headerlink" title="wirte()"></a>wirte()</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//函数向打开的设备或文件中写数据。</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>   </span></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">write</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span>;  </span><br></pre></td></tr></table></figure>
-
-<p>之后，这个文件描述符作为第一个参数被传到了 write，write 的第二个参数是数据的指针，第三个参数是要写入的字节数，数据被写入到了文件描述符对应的文件中。</p>
-<p>每个进程都有一张文件描述符的表单，且<strong>这个文件描述符空间独立于其他进程</strong>，其中每一项指向不同的文件。文件描述符是独立的，但是不同进程可以同时打开相同的文件，且其文件描述符不一定相同，相同的文件描述符也可能指向不同的文件。</p>
-<h3 id="shell"><a href="#shell" class="headerlink" title="shell"></a>shell</h3><p>比如，当我输入 <code>ls</code> 时，实际的意义是我要求 Shell 运行名为 <code>ls</code> 的程序，文件系统中会有一个文件名为 <code>ls</code>，这个文件中包含了一些计算机指令，所以实际上，当我输入 <code>ls</code> 时，我是在<strong>要求 shell 运行位于文件ls内的这些计算机指令。</strong></p>
-<p><code>grep x</code> 会搜索输入中包含 <code>x</code> 的行，我可以告诉 shell 将输入重定向到文件 <code>out</code>，这样我们就可以查看 <code>out</code> 中的 <code>x</code>。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011302133.png" alt="image-20220225011302133"></p>
-<h3 id="fork"><a href="#fork" class="headerlink" title="fork()"></a>fork()</h3><p>fork() 系统调用是重点，lab中会用到。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011344942.png" alt="image-20220225011344942">在第12行，我们调用了 fork。</p>
-<p><code>fork</code> 会拷贝当前进程的内存，并创建一个新的进程，这里的内存包含了进程的指令和数据。之后，我们就有了两个拥有完全一样内存的进程。</p>
-<p>fork系统调用在两个进程中都会返回，在原始的进程中，fork系统调用会返回大于0的整数，这个是新创建进程的ID，而在新创建的进程中，fork系统调用会返回 0。</p>
-<p>所以即使两个进程的内存是完全一样的，我们还是可以通过 fork 的返回值区分旧进程和新进程。</p>
-<blockquote>
-<p>学生提问：<code>fork</code> 产生的子进程是不是总是与父进程是一样的？它们有可能不一样吗？</p>
-<p>Robert教授：在XV6中，除了 <code>fork</code> 的返回值，两个进程是一样的。两个进程的指令是一样的，数据是一样的，栈是一样的，同时，两个进程又有各自独立的地址空间，它们都认为自己的内存从0开始增长，但这里是不同的内存。 在一个更加复杂的操作系统，有一些细节我们现在并不关心，这些细节偶尔会导致父子进程不一致，但是在XV6中，父子进程除了fork的返回值，其他都是一样的。</p>
-<p>除了内存是一样的以外，<strong>文件描述符的表单也从父进程拷贝到子进程。</strong>所以如果父进程打开了一个文件，子进程可以看到同一个文件描述符，尽管子进程看到的是一个文件描述符的表单的拷贝。除了拷贝内存以外，fork还会拷贝文件描述符表单这一点还挺重要的。</p>
-</blockquote>
-<p>当我们在 Shell 中运行东西的时候，Shell 实际上会创建一个新的进程来运行你输入的每一个指令。所以，当我输入 ls 时，我们需要 Shell 通过 fork 创建一个进程来运行ls，这里需要某种方式来让这个新的进程来运行ls程序中的指令，加载名为ls的文件中的指令（也就是后面的exec系统调用）。</p>
-<h3 id="exec"><a href="#exec" class="headerlink" title="exec()"></a>exec()</h3><p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011530170.png" alt="image-20220225011530170"></p>
-<p>代码会执行exec系统调用，这个系统调用<strong>会从指定的文件中读取并加载指令，并替代当前调用进程的指令。</strong>从某种程度上来说，这样相当于<strong>丢弃了调用进程的内存，并开始执行新加载的指令。</strong></p>
-<p>所以第12行的系统调用exec会有这样的效果：操作系统从名为 <code>echo</code> 的文件中加载指令到当前的进程中，并替换了当前进程的内存，之后开始执行这些新加载的指令。同时，你可以传入命令行参数，exec 允许你传入一个命令行参数的数组，这里就是一个C语言中的指针数组，在上面代码的第10行设置好了一个字符指针的数组，这里的字符指针本质就是一个字符串（string）。</p>
-<p>所以这里等价于运行echo命令，并带上“this is echo” 这三个参数。所以当我运行exec文件：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011637130.png" alt="image-20220225011637130"></p>
-<ul>
-<li><p><strong>exec 系统调用会保留当前的文件描述符表单</strong>。所以任何在 exec 系统调用之前的文件描述符，例如0，1，2等，它们在新的程序中表示相同的东西。</p>
-</li>
-<li><p><strong>通常来说 exec 系统调用不会返回，因为 exec 会完全替换当前进程的内存，相当于当前进程不复存在了，所以exec系统调用已经没有地方能返回了。</strong></p>
-</li>
-</ul>
-<p>所以，exec 系统调用从文件中读取指令，执行这些指令，然后就没有然后了。exec 系统调用只会当出错时才会返回，因为某些错误会阻止操作系统为你运行文件中的指令，例如程序文件根本不存在，因为 exec 系统调用不能找到文件，exec 会返回 <code>-1</code> 来表示：出错了，我找不到文件。所以通常来说 exec 系统调用不会返回，它只会在kernel 不能运行相应的文件时返回。</p>
-<blockquote>
-<p>学生提问：argv 中的最后一个 0 是什么意思？</p>
-<p>Robert教授：它标记了数组的结尾，我们将 0 作为最后一个指针。argv 中的每一个字符串实际上是一块包含了数据的内存指针，但是第 5 个元素是 0，通常来说指针 0 是一个 NULL 指针，它只表明结束。所以内核中的代码会遍历这里的数组，直到它找到了值为0的指针。</p>
-</blockquote>
-<p>展示一个 <code>forkexec.c</code> 程序：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011753270.png" alt="image-20220225011753270"></p>
-<p>在这个程序中的第12行，调用了fork。子进程从第14行开始，我们在子进程中与前一个程序一样调用exec。子进程会用echo命令来代替自己，echo执行完成之后就退出。之后父进程重新获得了控制。fork会在父进程中返回大于0的值，父进程会继续在第19行执行。</p>
-<p>Unix提供了一个wait系统调用，如第20行所示。<strong>wait会等待之前创建的子进程退出。</strong>当我在命令行执行一个指令时，我们一般会希望shell等待指令执行完成。所以wait系统调用，使得父进程可以等待任何一个子进程返回。</p>
-<p><strong>这里wait的参数status，是一种让退出的子进程以一个整数（32 bit的数据）的格式与等待的父进程通信方式。所以在第17行，exit的参数是1，操作系统会将1从退出的子进程传递到第20行，也就是等待的父进程处。&amp;status，是将status对应的地址传递给内核，内核会向这个地址写入子进程向exit传入的参数。</strong></p>
-<blockquote>
-<p>此处贴一下我的理解， <code>wait(&amp;status)</code> 在父进程中调用，目的是让子进程把他的 <code>exit()</code> 状态码存储到 <code>status</code> 变量中。</p>
-</blockquote>
-<p>Unix 中的风格是，如果一个程序成功的退出了，那么exit的参数会是0，如果出现了错误，那么就会像第17行一样，会向exit传递1。所以，如果你关心子进程的状态的话，父进程可以读取wait的参数，并决定子进程是否成功的完成了。</p>
-<blockquote>
-<p>注意，上面是一种常用写法，先调用 <code>fork</code> ，再在子进程中调用 <code>exec</code> 。这里实际上有些浪费， <code>fork</code> 首先拷贝了整个父进程的内存，但是随后执行的 <code>exec</code> 将这整个拷贝丢弃了，并且用将要运行的文件替换了原来的内容。</p>
-<p>某种程度上来说这里的拷贝操作浪费了，因为所有拷贝的内存都被丢弃并被 <code>exec</code> 替换。在大型程序中这里的影响会比较明显。如果你运行了一个几 GB 的程序，并且调用 <code>fork</code> ，那么实际就会拷贝所有的内存，可能会要消耗将近 1 秒钟来完成拷贝，这可能会是个问题。</p>
-<p>之后的课程会实现一些优化，比如说 <code>copy-on-write fork</code> ，这种方式会消除 <code>fork</code> 的几乎所有的明显的低效，而只拷贝执行 <code>exec</code> 所需要的内存，这里需要很多涉及到虚拟内存系统的技巧。你可以构建一个 <code>fork</code> ，对于内存实行懒拷贝，通常来说 fork 之后立刻是 exec，这样你就不用实际的拷贝，因为子进程实际上并没有使用大部分的内存。</p>
-</blockquote>
-<blockquote>
-<p>学生提问：当我们说子进程从父进程拷贝了所有的内存，这里具体指的是什么呢？是不是说子进程需要重新定义变量之类的？</p>
-<p>Robert教授：在编译之后， C 程序就是一些在内存中的指令，这些指令存在于内存中。所以这些指令可以被拷贝，因为它们就是<strong>内存中的字节</strong>，它们可以被拷贝到别处。通过一些有关虚拟内存的技巧，可以使得子进程的内存与父进程的内存一样，这里实际就是将父进程的内存镜像拷贝给子进程，并在子进程中执行。</p>
-<p>实际上，当我们在看 C 程序时，你应该认为它们就是一些机器指令，这些机器指令就是内存中的数据，所以可以被拷贝。</p>
-<p>学生提问：如果父进程有多个子进程，wait 是不是会在第一个子进程完成时就退出？这样的话，还有一些与父进程交错运行的子进程，是不是需要有多个wait来确保所有的子进程都完成？</p>
-<p>Robert教授：是的，<strong>如果一个进程调用fork两次，如果它想要等两个子进程都退出，它需要调用wait两次。</strong>每个wait会在一个子进程退出时立即返回。当wait返回时，你实际上没有必要知道哪个子进程退出了，但是<strong>wait返回了子进程的进程号</strong>，所以在wait返回之后，你就可以知道是哪个子进程退出了。</p>
-</blockquote>
-<h3 id="IO重定向"><a href="#IO重定向" class="headerlink" title="IO重定向"></a>IO重定向</h3><p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225012018361.png" alt="image-20220225012018361"></p>
-<p>Shell 之所以有这样的能力，是因为 Shell 首先会像第 13 行一样 fork，然后在子进程中，Shell改变了文件描述符。文件描述符1通常是进程用来作为输出的（也就是控制台的标准输出），Shell会将文件描述符1改为output文件，之后再运行你的指令。同时，父进程的文件描述符1并没有改变。所以这里先fork，再更改子进程的文件描述符，是Unix中的常见的用来重定向指令的输入输出的方法，这种方法同时又不会影响父进程的输入输出。因为我们不会想要重定向Shell的输出，我们只想重定向子进程的输出。</p>
-<p>我们可以看到预期的输出。代码第15行的close(1)的意义是，我们希望文件描述符1指向一个其他的位置。也就是说，在子进程中，我们不想使用原本指向console输出的文件描述符1。</p>
-<p>代码第16行的open一定会返回1，因为open会返回当前进程未使用的最小文件描述符序号。因为我们刚刚关闭了文件描述符1，而文件描述符0还对应着console的输入，所以open一定可以返回1。在代码第16行之后，文件描述符1与文件output.txt关联。</p>
-<p>这个例子同时也演示了分离fork和exec的好处。fork和exec是分开的系统调用，意味着在子进程中有一段时间，fork返回了，但是exec还没有执行，子进程仍然在运行父进程的指令。所以这段时间，尽管指令是运行在子进程中，但是这些指令仍然是父进程的指令，所以父进程仍然可以改变东西，直到代码执行到了第19行。这里fork和exec之间的间隔，提供了Shell修改文件描述符的可能。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://acking.cc/2023/01/28/ch03/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -340,8 +178,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/mit6.s081-ch3" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch3<i class="fa fa-external-link-alt"></i></a>
-          
+            <a href="/2023/01/28/ch03/" class="post-title-link" itemprop="url">mit6.s081-ch3</a>
         </h2>
 
         <div class="post-meta">
@@ -352,7 +189,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:36:05" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:43:29" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -540,7 +377,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
-    <link itemprop="mainEntityOfPage" href="http://acking.cc/2023/01/28/ch05/">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/2023/01/28/ch01/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/uploads/1.jpg">
@@ -554,8 +391,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/mit6.s081-ch5" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch5<i class="fa fa-external-link-alt"></i></a>
-          
+            <a href="/2023/01/28/ch01/" class="post-title-link" itemprop="url">mit6.s081-ch1</a>
         </h2>
 
         <div class="post-meta">
@@ -566,7 +402,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:36:23" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:43:25" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -593,136 +429,96 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Chapter-5"><a href="#Chapter-5" class="headerlink" title="Chapter 5"></a>Chapter 5</h1><h3 id="GDB-和汇编代码执行"><a href="#GDB-和汇编代码执行" class="headerlink" title="GDB 和汇编代码执行"></a>GDB 和汇编代码执行</h3><p>接下来我们来看一些真实的汇编代码：</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228010120267.png" alt="img"></p>
-<p>图中的代码，上半部分的注释是对应的 C 代码，这是个简单的函数，它累加了从 1 到 n 的所有数字，并返回结果。下半部分是可以编译出的最简单的汇编代码。如果你在自己的计算机编写同样的 C 代码并编译，你得到的极有可能是差别较大的汇编代码。这里有很多原因，有一些原因我们之后会讲，有一些原因是因为编译器。当将 C 代码编译成汇编代码时，现代的编译器会执行各种各样的优化，所以你们自己编译得到的汇编代码可能看起来是不一样的。例如，当你在 gdb 中做 debug 的时候，有时候你会看到 gdb 提示你说某些变量被优化掉了，这意味着编译器决定了自己不再需要那个变量，变量以及相关的信息会在某个时间点删掉。</p>
-<p>上图中的代码都很直观，首先将寄存器 <code>a0</code> 中的值保存在寄存器 <code>t0</code> 中。之后将寄存器 <code>a0</code> 设置为 0，之后在每个循环中将 t0 中的数据加到 a0 中，直到 t0 变成 0。这就是代码的所有内容。</p>
-<blockquote>
-<p>学生提问：这里面 .secion，.global，.text 分别是什么意思？</p>
-<p>TA：global 表示你可以在其他文件中调用这个函数。text 表明这里的是代码，如果你还记得 XV6 中的图3.4，</p>
-</blockquote>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228010214854.png" alt="img"></p>
-<blockquote>
-<p>每个进程的 page table 中有一个区域是 text，汇编代码中的 text 表明这部分是代码，并且位于 page table 的 text 区域中，text 中保存的就是代码。</p>
-</blockquote>
-<p>如果你对内核比较感兴趣，在编译完之后，你可以查看 <code>kernel.asm</code> 文件，你可以看到 XV6 完整内核的汇编版本。文件中每一行左边的数字表明的是这条指令会在内存中的哪个位置，这个信息非常有用。在汇编代码中还可以看到函数对应的 label，以及它们是在哪里定义的。这些信息在我们调试代码的时候可能会非常非常有用，我稍后会展示这部分。</p>
-<blockquote>
-<p>学生提问：<code>.asm</code> 文件和 <code>.s</code> 文件有什么区别？</p>
-<p>TA：我并不是百分百确定。<strong>这两类文件都是汇编代码，<code>.asm</code> 文件中包含大量额外的标注，而 <code>.s</code> 文件中没有</strong>。所以通常来说当你编译你的C代码，你得到的是 <code>.s</code> 文件。如果你好奇我们是如何得到 <code>.asm</code> 文件，makefile 里面包含了具体的步骤。</p>
-</blockquote>
-<p>现在回到函数 <code>sum_to</code>，我们看一下如何在 gdb 中检查这个函数。首先是要启动 QEMU，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014220124.png" alt="img"></p>
-<p>在另一个窗口打开 gdb，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014236718.png" alt="img"></p>
-<p>gdb 中输入 <code>tui enable</code> 可以打开源代码展示窗口。</p>
-<p><code>sum_to</code> 的代码现在都位于内核中，我在 <code>sum_to</code> 中设置一个断点。然后继续代码的执行，代码在断点处停住。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014316761.png" alt="img"></p>
-<p>gdb 窗口的左上角是程序计数器，我们可以看到当前的值是 <code>0x800065e2</code>。如果我们去 <code>kernel.asm</code>中，查找这个地址，我们可以看到这个地址就是 <code>sum_to</code> 函数的起始地址。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014331612.png" alt="img"></p>
-<p>如果代码出现了问题，在 gdb 中看到的地址，你可以直接在 <code>kernel.asm</code> 找到具体的行，分析问题的原因，然后再向相应的地址设置断点。</p>
-<p>在 gdb 中输入 <code>layout asm</code>，可以在 tui 窗口看到所有的汇编指令。再输入 <code>layout reg</code> 可以看到所有的寄存器信息。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014407718.png" alt="img"></p>
-<p>在寄存器窗口，可以看到 t0，a0 寄存器的值。在执行完一条汇编指令之后，<code>t0</code> 寄存器拥有了 <code>a0</code> 寄存器的内容，也就是 5。在寄存器窗口，更新了的寄存器会被高亮出来。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014450069.png" alt="img"></p>
-<p>之后持续的单步执行代码，直到函数返回。</p>
-<p><strong>如果你关心你设置了哪些断点，或着你跟踪代码的时候迷糊了，</strong>你可以在 gdb 中输入 <code>info breakpoints</code> ，你可以看到所有设置了的断点。你甚至可以看到这个断点已经被命中了几次。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014608402.png" alt="img"></p>
-<p>类似的，你也可以通过输入 <code>info reg</code> 查看<strong>寄存器</strong>的信息。</p>
-<blockquote>
-<p>学生提问：为什么这里展示的是汇编代码而不是 C 代码？</p>
-<p>TA：从最初的代码可以看出，这里的程序完全是汇编代码实现的，所以自然也没有关联的 C 程序。如果我将断点设置在 C 代码中，在命中断点之后输入 <code>layout split</code> 或者 <code>layout source</code>，就可以看到相应的 C 代码了。<code>layout split</code>  会同时展现C代码和汇编，而 <code>layout source</code> 只会展示C代码。</p>
-<p>学生提问：在C代码中，断点设置在某一行，如果这一行有多个语句的话，断点会设置在哪个语句？</p>
-<p>TA：断点会设置在第一个语句。</p>
-</blockquote>
-<h3 id="RISC-V-寄存器"><a href="#RISC-V-寄存器" class="headerlink" title="RISC-V 寄存器"></a>RISC-V 寄存器</h3><p>我们之前看过了汇编语言和 RISC-V 的介绍，接下来我们看一下之后 lab 相关的内容。这部分的内容其实就是本节课的<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2020/readings/riscv-calling.pdf">准备材料</a>中的内容。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014718657.png" alt="img"></p>
-<p>你们现在对于这个表达应该都很熟悉了，这个表里面是 <code>RISC-V 的寄存器</code>。寄存器是 CPU 或者处理器上，预先定义的可以用来存储数据的位置。寄存器之所以重要是因为汇编代码并不是在内存上执行，而是在寄存器上执行，也就是说，当我们在做 <code>add，sub</code> 时，我们是对寄存器进行操作。所以你们通常看到的汇编代码中的模式是，我们通过load将数据存放在寄存器中，这里的数据源可以是来自内存，也可以来自另一个寄存器。之后我们在寄存器上执行一些操作。如果我们对操作的结果关心的话，我们会将操作的结果存储在某个地方。这里的目的地可能是内存中的某个地址，也可能是另一个寄存器。这就是通常使用寄存器的方法。</p>
-<p>寄存器是用来进行任何运算和数据读取的最快的方式，这就是为什么使用它们很重要，也是为什么我们更喜欢使用寄存器而不是内存。当我们调用函数时，你可以看到这里有a0 - a7寄存器。通常我们在谈到寄存器的时候，我们会用它们的ABI名字。不仅是因为这样描述更清晰和标准，同时也因为在写汇编代码的时候使用的也是ABI名字。第一列中的寄存器名字并不是超级重要，它唯一重要的场景是在 RISC-V 的 Compressed Instruction 中。基本上来说，RISC-V 中通常的指令是 64bit，但是在 Compressed Instruction 中指令是16bit。在 Compressed Instruction 中我们使用更少的寄存器，也就是 x8 - x15 寄存器。我猜你们可能会有疑问，为什么 s1 寄存器和其他的s寄存器是分开的，因为 s1 在Compressed Instruction 是有效的，而 s2-s11 却不是。除了 Compressed Instruction，寄存器都是通过它们的 ABI 名字来引用。</p>
-<p>a0 到 a7 寄存器是用来作为函数的参数。如果一个函数有超过 8个参数，我们就需要用内存了。从这里也可以看出，当可以使用寄存器的时候，我们不会使用内存，我们只在不得不使用内存的场景才使用它。</p>
-<p>表单中的第4列，Saver列，当我们在讨论寄存器的时候也非常重要。</p>
-<p>它有两个可能的值Caller，Callee。我经常混淆这两个值，因为它们只差一个字母，我发现最简单的记住它们的方法是：</p>
+          <h1 id="Chapter-1"><a href="#Chapter-1" class="headerlink" title="Chapter 1"></a>Chapter 1</h1><h3 id="主要内容"><a href="#主要内容" class="headerlink" title="主要内容"></a>主要内容</h3><p>第一节课主要是介绍课程内容，考核方式，以及宏观讲述os的结构，实际内容主要讲解若干系统调用。</p>
+<p>由于系统调用是操作系统提供的服务的接口，所以系统调用长什么样，应用程序期望从系统调用得到什么返回，系统调用是怎么工作的，这些还是挺重要的。</p>
+<p>整个课程中，XV6 运行在一个 RISC-V 微处理器上，实验中我们会在 QEMU 模拟器上运行 XV6。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225010755776.png" alt="image-20220225010755776"></p>
+<h3 id="read"><a href="#read" class="headerlink" title="read()"></a>read()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>    </span></span><br><span class="line"><span class="function"><span class="type">ssize_t</span> <span class="title">read</span><span class="params">(<span class="type">int</span> fd, <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span></span>;  </span><br></pre></td></tr></table></figure>
+
 <ul>
-<li>Caller Saved寄存器在函数调用的时候不会保存</li>
-<li>Callee Saved寄存器在函数调用的时候会保存</li>
+<li><p>第一个参数是文件描述符，指向一个之前打开的文件。Shell 会确保默认情况下，当一个程序启动时，文件描述符 0 连接到标准输入，文件描述符 1 连接到了标准输出。所以我可以通过这个程序看到控制台打印我的输入。当然，这里的程序会预期文件描述符已经被 Shell 打开并设置好。这里的 0，1 文件描述符是非常普遍的Unix 风格，许多的 Unix 系统都会从文件描述符 0 读取数据，然后向文件描述符 1 写入数据。</p>
+</li>
+<li><p>第二个参数是指向某段内存的指针，程序可以通过指针对应的地址读取内存中的数据。在代码第 10 行，程序在栈里面申请了 64 字节的内存，并将指针保存在 buf 中，这样 read 可以将数据保存在这64字节中。</p>
+</li>
+<li><p>read 的第三个参数是代码想读取的最大长度，<code>sizeof(buf)</code> 表示，最多读取 64 字节的数据，所以这里的read 最多只能从连接到文件描述符 0 的设备，也就是标准输入中，读取 64 字节的数据。</p>
+</li>
 </ul>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020134831.png" alt="img"></p>
-<p><strong>这里的意思是，一个Caller Saved寄存器可能被其他函数重写</strong>。假设我们在函数a中调用函数b，任何被函数a使用的并且是Caller Saved寄存器，调用函数b可能重写这些寄存器。我认为一个比较好的例子就是Return address寄存器（注，保存的是函数返回的地址），你可以看到ra寄存器是Caller Saved，这一点很重要，它导致了当函数a调用函数b的时侯，b会重写Return address。所以基本上来说，任何一个Caller Saved寄存器，作为调用方的函数要小心可能的数据可能的变化；任何一个Callee Saved寄存器，作为被调用方的函数要小心寄存器的值不会相应的变化。我经常会弄混这两者的区别，然后会到这张表来回顾它们。</p>
-<p>如果你们还记得的话，所有的寄存器都是 64bit，各种各样的数据类型都会被改造的可以放进这 64bit 中。比如说我们有一个 32bit 的整数，取决于整数是不是有符号的，会通过在前面补 32 个 0 或者 1 来使得这个整数变成 64bit 并存在这些寄存器中。</p>
-<blockquote>
-<p>学生提问：返回值可以放在 a1 寄存器吗？</p>
-<p>TA：这是个好问题。我认为理论上是可以的，如果一个函数的返回值是long long型，也就是128bit，我们可以把它放到一对寄存器中。这也同样适用于函数的参数。所以，如果返回值超过了一个寄存器的长度，也就是64bit，我们可以将返回值保存在a0和a1。但是如果你只将返回值放在a1寄存器，我认为会出错。</p>
-<p>学生提问：除了 Stack Pointer 和 Frame Pointer，我不认为我们需要更多的Callee Saved寄存器。</p>
-<p>TA：s0 - s11都是Callee寄存器，我认为它们是提供给编译器而不是程序员使用。在一些特定的场景下，你会想要确保一些数据在函数调用之后仍然能够保存，这个时候编译器可以选择使用s寄存器。</p>
-</blockquote>
-<h3 id="Stack"><a href="#Stack" class="headerlink" title="Stack"></a>Stack</h3><p>接下来我们讨论一下栈。栈之所以很重要的原因是，它使得我们的函数变得有组织，且能够正常返回。</p>
-<p>下面是一个非常简单的栈的结构图，其中每一个区域都是一个 <strong>Stack Frame，每执行一次函数调用就会产生一个Stack Frame。</strong></p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020408160.png" alt="img"></p>
-<p>每一次我们调用一个函数，函数都会为自己创建一个Stack Frame，并且只给自己用。函数通过移动 Stack Pointer 来完成 Stack Frame 的空间分配。</p>
-<p>对于 Stack 来说，是从高地址开始向低地址使用。所以栈总是向下增长。当我们想要创建一个新的 Stack Frame 的时候，总是对当前的 Stack Pointer 做减法。一个函数的 Stack Frame 包含了保存的寄存器，本地变量，并且，如果函数的参数多于8个，额外的参数会出现在 Stack 中。所以 Stack Frame 大小并不总是一样，即使在这个图里面看起来是一样大的。不同的函数有不同数量的本地变量，不同的寄存器，所以 Stack Frame 的大小是不一样的。但是有关 Stack Frame 有两件事情是确定的：</p>
+<p>返回值情况：</p>
 <ul>
-<li><strong>Return address 总是会出现在 Stack Frame 的第一位</strong></li>
-<li><strong>指向前一个 Stack Frame 的指针也会出现在栈中的固定位置</strong></li>
-</ul>
-<p>有关 Stack Frame 中有两个重要的寄存器，第一个是 SP（Stack Pointer），它指向 Stack 的底部并代表了当前 Stack Frame 的位置。第二个是 FP（Frame Pointer），它指向当前 Stack Frame 的顶部。因为 Return address 和指向前一个 Stack Frame 的指针都在当前Stack Frame的固定位置，所以可以通过当前的FP寄存器寻址到这两个数据。</p>
-<p>我们保存前一个Stack Frame的指针的原因是为了让我们能跳转回去。所以当前函数返回时，我们可以将前一个Frame Pointer存储到FP寄存器中。所以我们使用Frame Pointer来操纵我们的Stack Frames，并确保我们总是指向正确的函数。</p>
-<p>Stack Frame 必须要被汇编代码创建，所以是<strong>编译器生成了汇编代码，进而创建了Stack Frame</strong>。所以通常，在汇编代码中，函数的最开始你们可以看到 Function prologue，之后是函数的本体，最后是Epollgue。这就是一个汇编函数通常的样子。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020624180.png" alt="img"></p>
-<p>我们从汇编代码中来看一下这里的操作。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020718715.png" alt="img"></p>
-<p>在我们之前的 sum_to 函数中，只有函数主体，并没有 Stack Frame 的内容。它这里能正常工作的原因是它足够简单，并且它是一个 leaf 函数。leaf 函数是指不调用别的函数的函数，它的特别之处在于它不用担心保存自己的Return address 或者任何其他的Caller Saved寄存器，因为它不会调用别的函数。</p>
-<p>而另一个函数 sum_then_double 就不是一个leaf函数了，这里你可以看到它调用了sum_to。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020920984.png" alt="img"></p>
-<p>所以在这个函数中，需要包含 prologue。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021006444.png" alt="img"></p>
-<p>这里我们对Stack Pointer减16，这样我们为新的 Stack Frame 创建了16字节的空间。之后我们将 Return address 保存在 Stack Pointer 位置。</p>
-<p>之后就是调用 sum_to 并对结果乘以2，最后是 Epllogue，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021159511.png" alt="image-20220228021159511"></p>
-<p>这里首先将 Return address 加载回 ra 寄存器，通过对 Stack Pointer 加 16 来删除刚刚创建的 Stack Frame，最后 ret 从函数中退出。</p>
-<p>这里我替大家问一个问题，如果我们删除掉Prologue和Epllogue，然后只剩下函数主体会发生什么？有人可以猜一下吗？</p>
+<li><p>read的返回值可能是读到的字节数，在上面的截图中也就是 6（ <code>xyzzy</code> 加上结束符）</p>
+</li>
+<li><p>read可能从一个文件读数据，如果到达了文件的结尾没有更多的内容了，read会返回 0</p>
+</li>
+<li><p>如果出现了一些错误，比如文件描述符不存在，read或许会返回 -1。</p>
 <blockquote>
-<p>学生回答：sum_then_double将不知道它应该返回的Return address。所以调用sum_to的时候，Return address被覆盖了，最终sum_to函数不能返回到它原本的调用位置。</p>
+<p> 在后面的很多例子中，比如第16行，我都没有通过检查系统调用的返回来判断系统调用是否出错，但是你应该比我更加小心，你应该清楚系统调用通常是通过返回 -1 来表示错误，你应该检查所有系统调用的返回值以确保没有错误，这点和我们计算机系统安全的老师观点一致，值得重视。</p>
 </blockquote>
-<p>是的，完全正确，我们可以看一下具体会发生什么。先在修改过的sum_then_double设置断点，然后执行sum_then_double。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021659428.png" alt="img"></p>
-<p>我们可以看到现在的ra寄存器是 0x80006392，它指向demo2函数，也就是sum_then_double的调用函数。之后我们执行代码，调用了sum_to。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021649880.png" alt="img"></p>
-<p>我们可以看到ra寄存器的值被 sum_to重写成了0x800065f4，指向sum_then_double，这也合理，符合我们的预期。我们在函数sum_then_double中调用了sum_to，那么sum_to就应该要返回到sum_then_double。</p>
-<p>之后执行代码直到sum_then_double返回。如前面那位同学说的，因为没有恢复sum_then_double自己的Return address，现在的Return address仍然是sum_to对应的值，现在我们就会进入到一个无限循环中。</p>
-<p>我认为这是一个很好的例子用来展示为什么跟踪Caller和Callee寄存器是重要的。</p>
-<p>接下来我们来看一些C代码。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021640522.png" alt="img"></p>
-<p>demo4函数里面调用了dummymain函数。我们在dummymain函数中设置一个断点，</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021631418.png" alt="img"></p>
-<p>现在我们在dummymain函数中。如果我们在gdb中输入info frame，可以看到有关当前Stack Frame许多有用的信息。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090107324.png" alt="image-20220228090107324"></p>
+</li>
+</ul>
+<h3 id="open"><a href="#open" class="headerlink" title="open()"></a>open()</h3><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">int</span> <span class="title">open</span><span class="params">(<span class="type">const</span> <span class="type">char</span> * pathname, <span class="type">int</span> flags, <span class="type">mode_t</span> mode)</span></span>; </span><br></pre></td></tr></table></figure>
+
+<p>代码中的第11行，执行了 open 系统调用，将文件名 <code>output.txt</code> 作为第一个参数传入，第二个参数是一些标志位，用来告诉 open 系统调用在内核中的实现：我们将要创建并写入一个文件。</p>
+<p>open 系统调用会返回一个新分配的文件描述符，这里的文件描述符是一个小的数字，可能是2，3，4或者其他的数字。</p>
+<h3 id="wirte"><a href="#wirte" class="headerlink" title="wirte()"></a>wirte()</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//函数向打开的设备或文件中写数据。</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span>   </span></span><br><span class="line"><span class="type">ssize_t</span> <span class="title function_">write</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="type">void</span> *buf, <span class="type">size_t</span> count)</span>;  </span><br></pre></td></tr></table></figure>
+
+<p>之后，这个文件描述符作为第一个参数被传到了 write，write 的第二个参数是数据的指针，第三个参数是要写入的字节数，数据被写入到了文件描述符对应的文件中。</p>
+<p>每个进程都有一张文件描述符的表单，且<strong>这个文件描述符空间独立于其他进程</strong>，其中每一项指向不同的文件。文件描述符是独立的，但是不同进程可以同时打开相同的文件，且其文件描述符不一定相同，相同的文件描述符也可能指向不同的文件。</p>
+<h3 id="shell"><a href="#shell" class="headerlink" title="shell"></a>shell</h3><p>比如，当我输入 <code>ls</code> 时，实际的意义是我要求 Shell 运行名为 <code>ls</code> 的程序，文件系统中会有一个文件名为 <code>ls</code>，这个文件中包含了一些计算机指令，所以实际上，当我输入 <code>ls</code> 时，我是在<strong>要求 shell 运行位于文件ls内的这些计算机指令。</strong></p>
+<p><code>grep x</code> 会搜索输入中包含 <code>x</code> 的行，我可以告诉 shell 将输入重定向到文件 <code>out</code>，这样我们就可以查看 <code>out</code> 中的 <code>x</code>。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011302133.png" alt="image-20220225011302133"></p>
+<h3 id="fork"><a href="#fork" class="headerlink" title="fork()"></a>fork()</h3><p>fork() 系统调用是重点，lab中会用到。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011344942.png" alt="image-20220225011344942">在第12行，我们调用了 fork。</p>
+<p><code>fork</code> 会拷贝当前进程的内存，并创建一个新的进程，这里的内存包含了进程的指令和数据。之后，我们就有了两个拥有完全一样内存的进程。</p>
+<p>fork系统调用在两个进程中都会返回，在原始的进程中，fork系统调用会返回大于0的整数，这个是新创建进程的ID，而在新创建的进程中，fork系统调用会返回 0。</p>
+<p>所以即使两个进程的内存是完全一样的，我们还是可以通过 fork 的返回值区分旧进程和新进程。</p>
+<blockquote>
+<p>学生提问：<code>fork</code> 产生的子进程是不是总是与父进程是一样的？它们有可能不一样吗？</p>
+<p>Robert教授：在XV6中，除了 <code>fork</code> 的返回值，两个进程是一样的。两个进程的指令是一样的，数据是一样的，栈是一样的，同时，两个进程又有各自独立的地址空间，它们都认为自己的内存从0开始增长，但这里是不同的内存。 在一个更加复杂的操作系统，有一些细节我们现在并不关心，这些细节偶尔会导致父子进程不一致，但是在XV6中，父子进程除了fork的返回值，其他都是一样的。</p>
+<p>除了内存是一样的以外，<strong>文件描述符的表单也从父进程拷贝到子进程。</strong>所以如果父进程打开了一个文件，子进程可以看到同一个文件描述符，尽管子进程看到的是一个文件描述符的表单的拷贝。除了拷贝内存以外，fork还会拷贝文件描述符表单这一点还挺重要的。</p>
+</blockquote>
+<p>当我们在 Shell 中运行东西的时候，Shell 实际上会创建一个新的进程来运行你输入的每一个指令。所以，当我输入 ls 时，我们需要 Shell 通过 fork 创建一个进程来运行ls，这里需要某种方式来让这个新的进程来运行ls程序中的指令，加载名为ls的文件中的指令（也就是后面的exec系统调用）。</p>
+<h3 id="exec"><a href="#exec" class="headerlink" title="exec()"></a>exec()</h3><p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011530170.png" alt="image-20220225011530170"></p>
+<p>代码会执行exec系统调用，这个系统调用<strong>会从指定的文件中读取并加载指令，并替代当前调用进程的指令。</strong>从某种程度上来说，这样相当于<strong>丢弃了调用进程的内存，并开始执行新加载的指令。</strong></p>
+<p>所以第12行的系统调用exec会有这样的效果：操作系统从名为 <code>echo</code> 的文件中加载指令到当前的进程中，并替换了当前进程的内存，之后开始执行这些新加载的指令。同时，你可以传入命令行参数，exec 允许你传入一个命令行参数的数组，这里就是一个C语言中的指针数组，在上面代码的第10行设置好了一个字符指针的数组，这里的字符指针本质就是一个字符串（string）。</p>
+<p>所以这里等价于运行echo命令，并带上“this is echo” 这三个参数。所以当我运行exec文件：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011637130.png" alt="image-20220225011637130"></p>
 <ul>
-<li>Stack level 0，表明这是调用栈的最底层</li>
-<li>pc，当前的程序计数器</li>
-<li>saved pc，demo4的位置，表明当前函数要返回的位置</li>
-<li>source language c，表明这是C代码</li>
-<li>Arglist at，表明参数的起始地址。当前的参数都在寄存器中，可以看到 argc &#x3D; 3，argv 是一个地址</li>
+<li><p><strong>exec 系统调用会保留当前的文件描述符表单</strong>。所以任何在 exec 系统调用之前的文件描述符，例如0，1，2等，它们在新的程序中表示相同的东西。</p>
+</li>
+<li><p><strong>通常来说 exec 系统调用不会返回，因为 exec 会完全替换当前进程的内存，相当于当前进程不复存在了，所以exec系统调用已经没有地方能返回了。</strong></p>
+</li>
 </ul>
-<p>如果输入 <code>backtrace</code>（简写bt）可以看到从当前调用栈开始的所有 Stack Frame。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021832784.png" alt="image-20220228021832784"></p>
-<p>如果对某一个Stack Frame感兴趣，可以先定位到那个 frame 再输入 <code>info frame</code>，假设对 syscall 的 Stack Frame 感兴趣。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090128324.png" alt="image-20220228090128324"></p>
-<p>在这个Stack Frame中有更多的信息，有一堆的 Saved Registers，有一些本地变量等等。这些信息对于调试代码来说超级重要。</p>
+<p>所以，exec 系统调用从文件中读取指令，执行这些指令，然后就没有然后了。exec 系统调用只会当出错时才会返回，因为某些错误会阻止操作系统为你运行文件中的指令，例如程序文件根本不存在，因为 exec 系统调用不能找到文件，exec 会返回 <code>-1</code> 来表示：出错了，我找不到文件。所以通常来说 exec 系统调用不会返回，它只会在kernel 不能运行相应的文件时返回。</p>
 <blockquote>
-<p>学生提问：为什么有的时候编译器会优化掉 <code>argc</code> 或者 <code>argv</code> ？这个以前发生过。</p>
-<p>TA：这意味着编译器发现了一种更有效的方法，不使用这些变量，而是通过寄存器来完成所有的操作。如果一个变量不是百分百必要的话，这种优化还是很有常见的。我们并没有给你编译器的控制能力，但是在你们的日常使用中，你可以尝试设置编译器的optimization flag为 0，不过就算这样，编译器也会做某些程度的优化。</p>
+<p>学生提问：argv 中的最后一个 0 是什么意思？</p>
+<p>Robert教授：它标记了数组的结尾，我们将 0 作为最后一个指针。argv 中的每一个字符串实际上是一块包含了数据的内存指针，但是第 5 个元素是 0，通常来说指针 0 是一个 NULL 指针，它只表明结束。所以内核中的代码会遍历这里的数组，直到它找到了值为0的指针。</p>
 </blockquote>
-<h3 id="Struct"><a href="#Struct" class="headerlink" title="Struct"></a>Struct</h3><p>今天我想讨论的最后一个话题是 struct，stuct 非常重要并且在课程的实验中会经常出现。我会稍微介绍一下 struct 在内存中的结构是怎样。基本上来说，struct 在内存中是一段连续的地址，如果我们有一个 struct，并且有f1，f2，f3三个字段。</p>
-<p>当我们创建这样一个struct时，内存中相应的字段会彼此相邻。你可以认为 struct 像是一个数组，但是里面的不同字段的类型可以不一样。（注，这应该是这一节中最有用的一句话了。。。）</p>
-<p>我们可以将struct作为参数传递给函数。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090154065.png" alt="image-20220228090154065"></p>
-<p>这里有一个名字是Person的struct，它有两个字段。我将这个struct作为参数传递给printPerson并打印相关的信息。我们在printPerson中设置一个断点，当程序运行到函数内部时打印当前的Stack Frame。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090208092.png" alt="img"></p>
-<p>我们可以看到当前函数有一个参数p。打印p可以看到这是struct Person的指针，打印p的反引用可以看到struct的具体内容。</p>
-<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090227304.png" alt="img"></p>
+<p>展示一个 <code>forkexec.c</code> 程序：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225011753270.png" alt="image-20220225011753270"></p>
+<p>在这个程序中的第12行，调用了fork。子进程从第14行开始，我们在子进程中与前一个程序一样调用exec。子进程会用echo命令来代替自己，echo执行完成之后就退出。之后父进程重新获得了控制。fork会在父进程中返回大于0的值，父进程会继续在第19行执行。</p>
+<p>Unix提供了一个wait系统调用，如第20行所示。<strong>wait会等待之前创建的子进程退出。</strong>当我在命令行执行一个指令时，我们一般会希望shell等待指令执行完成。所以wait系统调用，使得父进程可以等待任何一个子进程返回。</p>
+<p><strong>这里wait的参数status，是一种让退出的子进程以一个整数（32 bit的数据）的格式与等待的父进程通信方式。所以在第17行，exit的参数是1，操作系统会将1从退出的子进程传递到第20行，也就是等待的父进程处。&amp;status，是将status对应的地址传递给内核，内核会向这个地址写入子进程向exit传入的参数。</strong></p>
 <blockquote>
-<p>学生提问：是谁创建了编译器来将C代码转换成各种各样的汇编代码，是不同的指令集创建者，还是第三方？</p>
-<p>TA：我认为不是指令集的创建者，通常是第三方创建的。你们常见的两大编译器，一个是 gcc，这是由 GNU 基金会维护的；一个是 llvm，这个是开源的，你可以查到相应的代码。当一个新的指令集，例如 RISC-V，发布之后，我认为会指令集的创建者和编译器的设计者之间会有一些高度合作。简单来说我认为是第三方配合指令集的创建者完成的编译器。RISC-V 或许是个例外，因为它是来自于一个研究项目，相应的团队或许自己写了编译器，但是我不认为 Intel 对于 gcc 或者 llvm 有任何输入。</p>
+<p>此处贴一下我的理解， <code>wait(&amp;status)</code> 在父进程中调用，目的是让子进程把他的 <code>exit()</code> 状态码存储到 <code>status</code> 变量中。</p>
 </blockquote>
+<p>Unix 中的风格是，如果一个程序成功的退出了，那么exit的参数会是0，如果出现了错误，那么就会像第17行一样，会向exit传递1。所以，如果你关心子进程的状态的话，父进程可以读取wait的参数，并决定子进程是否成功的完成了。</p>
+<blockquote>
+<p>注意，上面是一种常用写法，先调用 <code>fork</code> ，再在子进程中调用 <code>exec</code> 。这里实际上有些浪费， <code>fork</code> 首先拷贝了整个父进程的内存，但是随后执行的 <code>exec</code> 将这整个拷贝丢弃了，并且用将要运行的文件替换了原来的内容。</p>
+<p>某种程度上来说这里的拷贝操作浪费了，因为所有拷贝的内存都被丢弃并被 <code>exec</code> 替换。在大型程序中这里的影响会比较明显。如果你运行了一个几 GB 的程序，并且调用 <code>fork</code> ，那么实际就会拷贝所有的内存，可能会要消耗将近 1 秒钟来完成拷贝，这可能会是个问题。</p>
+<p>之后的课程会实现一些优化，比如说 <code>copy-on-write fork</code> ，这种方式会消除 <code>fork</code> 的几乎所有的明显的低效，而只拷贝执行 <code>exec</code> 所需要的内存，这里需要很多涉及到虚拟内存系统的技巧。你可以构建一个 <code>fork</code> ，对于内存实行懒拷贝，通常来说 fork 之后立刻是 exec，这样你就不用实际的拷贝，因为子进程实际上并没有使用大部分的内存。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：当我们说子进程从父进程拷贝了所有的内存，这里具体指的是什么呢？是不是说子进程需要重新定义变量之类的？</p>
+<p>Robert教授：在编译之后， C 程序就是一些在内存中的指令，这些指令存在于内存中。所以这些指令可以被拷贝，因为它们就是<strong>内存中的字节</strong>，它们可以被拷贝到别处。通过一些有关虚拟内存的技巧，可以使得子进程的内存与父进程的内存一样，这里实际就是将父进程的内存镜像拷贝给子进程，并在子进程中执行。</p>
+<p>实际上，当我们在看 C 程序时，你应该认为它们就是一些机器指令，这些机器指令就是内存中的数据，所以可以被拷贝。</p>
+<p>学生提问：如果父进程有多个子进程，wait 是不是会在第一个子进程完成时就退出？这样的话，还有一些与父进程交错运行的子进程，是不是需要有多个wait来确保所有的子进程都完成？</p>
+<p>Robert教授：是的，<strong>如果一个进程调用fork两次，如果它想要等两个子进程都退出，它需要调用wait两次。</strong>每个wait会在一个子进程退出时立即返回。当wait返回时，你实际上没有必要知道哪个子进程退出了，但是<strong>wait返回了子进程的进程号</strong>，所以在wait返回之后，你就可以知道是哪个子进程退出了。</p>
+</blockquote>
+<h3 id="IO重定向"><a href="#IO重定向" class="headerlink" title="IO重定向"></a>IO重定向</h3><p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220225012018361.png" alt="image-20220225012018361"></p>
+<p>Shell 之所以有这样的能力，是因为 Shell 首先会像第 13 行一样 fork，然后在子进程中，Shell改变了文件描述符。文件描述符1通常是进程用来作为输出的（也就是控制台的标准输出），Shell会将文件描述符1改为output文件，之后再运行你的指令。同时，父进程的文件描述符1并没有改变。所以这里先fork，再更改子进程的文件描述符，是Unix中的常见的用来重定向指令的输入输出的方法，这种方法同时又不会影响父进程的输入输出。因为我们不会想要重定向Shell的输出，我们只想重定向子进程的输出。</p>
+<p>我们可以看到预期的输出。代码第15行的close(1)的意义是，我们希望文件描述符1指向一个其他的位置。也就是说，在子进程中，我们不想使用原本指向console输出的文件描述符1。</p>
+<p>代码第16行的open一定会返回1，因为open会返回当前进程未使用的最小文件描述符序号。因为我们刚刚关闭了文件描述符1，而文件描述符0还对应着console的输入，所以open一定可以返回1。在代码第16行之后，文件描述符1与文件output.txt关联。</p>
+<p>这个例子同时也演示了分离fork和exec的好处。fork和exec是分开的系统调用，意味着在子进程中有一段时间，fork返回了，但是exec还没有执行，子进程仍然在运行父进程的指令。所以这段时间，尽管指令是运行在子进程中，但是这些指令仍然是父进程的指令，所以父进程仍然可以改变东西，直到代码执行到了第19行。这里fork和exec之间的间隔，提供了Shell修改文件描述符的可能。</p>
 
       
     </div>
@@ -756,8 +552,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/mit6.s081-ch4" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch4<i class="fa fa-external-link-alt"></i></a>
-          
+            <a href="/2023/01/28/ch04/" class="post-title-link" itemprop="url">mit6.s081-ch4</a>
         </h2>
 
         <div class="post-meta">
@@ -768,7 +563,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:36:19" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:43:32" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1061,6 +856,207 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/2023/01/28/ch05/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/1.jpg">
+      <meta itemprop="name" content="Sam Shen">
+      <meta itemprop="description" content="share cs knowledge">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AcKing">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2023/01/28/ch05/" class="post-title-link" itemprop="url">mit6.s081-ch5</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:43:37" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081/" itemprop="url" rel="index"><span itemprop="name">mit6.s081</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Chapter-5"><a href="#Chapter-5" class="headerlink" title="Chapter 5"></a>Chapter 5</h1><h3 id="GDB-和汇编代码执行"><a href="#GDB-和汇编代码执行" class="headerlink" title="GDB 和汇编代码执行"></a>GDB 和汇编代码执行</h3><p>接下来我们来看一些真实的汇编代码：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228010120267.png" alt="img"></p>
+<p>图中的代码，上半部分的注释是对应的 C 代码，这是个简单的函数，它累加了从 1 到 n 的所有数字，并返回结果。下半部分是可以编译出的最简单的汇编代码。如果你在自己的计算机编写同样的 C 代码并编译，你得到的极有可能是差别较大的汇编代码。这里有很多原因，有一些原因我们之后会讲，有一些原因是因为编译器。当将 C 代码编译成汇编代码时，现代的编译器会执行各种各样的优化，所以你们自己编译得到的汇编代码可能看起来是不一样的。例如，当你在 gdb 中做 debug 的时候，有时候你会看到 gdb 提示你说某些变量被优化掉了，这意味着编译器决定了自己不再需要那个变量，变量以及相关的信息会在某个时间点删掉。</p>
+<p>上图中的代码都很直观，首先将寄存器 <code>a0</code> 中的值保存在寄存器 <code>t0</code> 中。之后将寄存器 <code>a0</code> 设置为 0，之后在每个循环中将 t0 中的数据加到 a0 中，直到 t0 变成 0。这就是代码的所有内容。</p>
+<blockquote>
+<p>学生提问：这里面 .secion，.global，.text 分别是什么意思？</p>
+<p>TA：global 表示你可以在其他文件中调用这个函数。text 表明这里的是代码，如果你还记得 XV6 中的图3.4，</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228010214854.png" alt="img"></p>
+<blockquote>
+<p>每个进程的 page table 中有一个区域是 text，汇编代码中的 text 表明这部分是代码，并且位于 page table 的 text 区域中，text 中保存的就是代码。</p>
+</blockquote>
+<p>如果你对内核比较感兴趣，在编译完之后，你可以查看 <code>kernel.asm</code> 文件，你可以看到 XV6 完整内核的汇编版本。文件中每一行左边的数字表明的是这条指令会在内存中的哪个位置，这个信息非常有用。在汇编代码中还可以看到函数对应的 label，以及它们是在哪里定义的。这些信息在我们调试代码的时候可能会非常非常有用，我稍后会展示这部分。</p>
+<blockquote>
+<p>学生提问：<code>.asm</code> 文件和 <code>.s</code> 文件有什么区别？</p>
+<p>TA：我并不是百分百确定。<strong>这两类文件都是汇编代码，<code>.asm</code> 文件中包含大量额外的标注，而 <code>.s</code> 文件中没有</strong>。所以通常来说当你编译你的C代码，你得到的是 <code>.s</code> 文件。如果你好奇我们是如何得到 <code>.asm</code> 文件，makefile 里面包含了具体的步骤。</p>
+</blockquote>
+<p>现在回到函数 <code>sum_to</code>，我们看一下如何在 gdb 中检查这个函数。首先是要启动 QEMU，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014220124.png" alt="img"></p>
+<p>在另一个窗口打开 gdb，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014236718.png" alt="img"></p>
+<p>gdb 中输入 <code>tui enable</code> 可以打开源代码展示窗口。</p>
+<p><code>sum_to</code> 的代码现在都位于内核中，我在 <code>sum_to</code> 中设置一个断点。然后继续代码的执行，代码在断点处停住。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014316761.png" alt="img"></p>
+<p>gdb 窗口的左上角是程序计数器，我们可以看到当前的值是 <code>0x800065e2</code>。如果我们去 <code>kernel.asm</code>中，查找这个地址，我们可以看到这个地址就是 <code>sum_to</code> 函数的起始地址。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014331612.png" alt="img"></p>
+<p>如果代码出现了问题，在 gdb 中看到的地址，你可以直接在 <code>kernel.asm</code> 找到具体的行，分析问题的原因，然后再向相应的地址设置断点。</p>
+<p>在 gdb 中输入 <code>layout asm</code>，可以在 tui 窗口看到所有的汇编指令。再输入 <code>layout reg</code> 可以看到所有的寄存器信息。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014407718.png" alt="img"></p>
+<p>在寄存器窗口，可以看到 t0，a0 寄存器的值。在执行完一条汇编指令之后，<code>t0</code> 寄存器拥有了 <code>a0</code> 寄存器的内容，也就是 5。在寄存器窗口，更新了的寄存器会被高亮出来。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014450069.png" alt="img"></p>
+<p>之后持续的单步执行代码，直到函数返回。</p>
+<p><strong>如果你关心你设置了哪些断点，或着你跟踪代码的时候迷糊了，</strong>你可以在 gdb 中输入 <code>info breakpoints</code> ，你可以看到所有设置了的断点。你甚至可以看到这个断点已经被命中了几次。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014608402.png" alt="img"></p>
+<p>类似的，你也可以通过输入 <code>info reg</code> 查看<strong>寄存器</strong>的信息。</p>
+<blockquote>
+<p>学生提问：为什么这里展示的是汇编代码而不是 C 代码？</p>
+<p>TA：从最初的代码可以看出，这里的程序完全是汇编代码实现的，所以自然也没有关联的 C 程序。如果我将断点设置在 C 代码中，在命中断点之后输入 <code>layout split</code> 或者 <code>layout source</code>，就可以看到相应的 C 代码了。<code>layout split</code>  会同时展现C代码和汇编，而 <code>layout source</code> 只会展示C代码。</p>
+<p>学生提问：在C代码中，断点设置在某一行，如果这一行有多个语句的话，断点会设置在哪个语句？</p>
+<p>TA：断点会设置在第一个语句。</p>
+</blockquote>
+<h3 id="RISC-V-寄存器"><a href="#RISC-V-寄存器" class="headerlink" title="RISC-V 寄存器"></a>RISC-V 寄存器</h3><p>我们之前看过了汇编语言和 RISC-V 的介绍，接下来我们看一下之后 lab 相关的内容。这部分的内容其实就是本节课的<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2020/readings/riscv-calling.pdf">准备材料</a>中的内容。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228014718657.png" alt="img"></p>
+<p>你们现在对于这个表达应该都很熟悉了，这个表里面是 <code>RISC-V 的寄存器</code>。寄存器是 CPU 或者处理器上，预先定义的可以用来存储数据的位置。寄存器之所以重要是因为汇编代码并不是在内存上执行，而是在寄存器上执行，也就是说，当我们在做 <code>add，sub</code> 时，我们是对寄存器进行操作。所以你们通常看到的汇编代码中的模式是，我们通过load将数据存放在寄存器中，这里的数据源可以是来自内存，也可以来自另一个寄存器。之后我们在寄存器上执行一些操作。如果我们对操作的结果关心的话，我们会将操作的结果存储在某个地方。这里的目的地可能是内存中的某个地址，也可能是另一个寄存器。这就是通常使用寄存器的方法。</p>
+<p>寄存器是用来进行任何运算和数据读取的最快的方式，这就是为什么使用它们很重要，也是为什么我们更喜欢使用寄存器而不是内存。当我们调用函数时，你可以看到这里有a0 - a7寄存器。通常我们在谈到寄存器的时候，我们会用它们的ABI名字。不仅是因为这样描述更清晰和标准，同时也因为在写汇编代码的时候使用的也是ABI名字。第一列中的寄存器名字并不是超级重要，它唯一重要的场景是在 RISC-V 的 Compressed Instruction 中。基本上来说，RISC-V 中通常的指令是 64bit，但是在 Compressed Instruction 中指令是16bit。在 Compressed Instruction 中我们使用更少的寄存器，也就是 x8 - x15 寄存器。我猜你们可能会有疑问，为什么 s1 寄存器和其他的s寄存器是分开的，因为 s1 在Compressed Instruction 是有效的，而 s2-s11 却不是。除了 Compressed Instruction，寄存器都是通过它们的 ABI 名字来引用。</p>
+<p>a0 到 a7 寄存器是用来作为函数的参数。如果一个函数有超过 8个参数，我们就需要用内存了。从这里也可以看出，当可以使用寄存器的时候，我们不会使用内存，我们只在不得不使用内存的场景才使用它。</p>
+<p>表单中的第4列，Saver列，当我们在讨论寄存器的时候也非常重要。</p>
+<p>它有两个可能的值Caller，Callee。我经常混淆这两个值，因为它们只差一个字母，我发现最简单的记住它们的方法是：</p>
+<ul>
+<li>Caller Saved寄存器在函数调用的时候不会保存</li>
+<li>Callee Saved寄存器在函数调用的时候会保存</li>
+</ul>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020134831.png" alt="img"></p>
+<p><strong>这里的意思是，一个Caller Saved寄存器可能被其他函数重写</strong>。假设我们在函数a中调用函数b，任何被函数a使用的并且是Caller Saved寄存器，调用函数b可能重写这些寄存器。我认为一个比较好的例子就是Return address寄存器（注，保存的是函数返回的地址），你可以看到ra寄存器是Caller Saved，这一点很重要，它导致了当函数a调用函数b的时侯，b会重写Return address。所以基本上来说，任何一个Caller Saved寄存器，作为调用方的函数要小心可能的数据可能的变化；任何一个Callee Saved寄存器，作为被调用方的函数要小心寄存器的值不会相应的变化。我经常会弄混这两者的区别，然后会到这张表来回顾它们。</p>
+<p>如果你们还记得的话，所有的寄存器都是 64bit，各种各样的数据类型都会被改造的可以放进这 64bit 中。比如说我们有一个 32bit 的整数，取决于整数是不是有符号的，会通过在前面补 32 个 0 或者 1 来使得这个整数变成 64bit 并存在这些寄存器中。</p>
+<blockquote>
+<p>学生提问：返回值可以放在 a1 寄存器吗？</p>
+<p>TA：这是个好问题。我认为理论上是可以的，如果一个函数的返回值是long long型，也就是128bit，我们可以把它放到一对寄存器中。这也同样适用于函数的参数。所以，如果返回值超过了一个寄存器的长度，也就是64bit，我们可以将返回值保存在a0和a1。但是如果你只将返回值放在a1寄存器，我认为会出错。</p>
+<p>学生提问：除了 Stack Pointer 和 Frame Pointer，我不认为我们需要更多的Callee Saved寄存器。</p>
+<p>TA：s0 - s11都是Callee寄存器，我认为它们是提供给编译器而不是程序员使用。在一些特定的场景下，你会想要确保一些数据在函数调用之后仍然能够保存，这个时候编译器可以选择使用s寄存器。</p>
+</blockquote>
+<h3 id="Stack"><a href="#Stack" class="headerlink" title="Stack"></a>Stack</h3><p>接下来我们讨论一下栈。栈之所以很重要的原因是，它使得我们的函数变得有组织，且能够正常返回。</p>
+<p>下面是一个非常简单的栈的结构图，其中每一个区域都是一个 <strong>Stack Frame，每执行一次函数调用就会产生一个Stack Frame。</strong></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020408160.png" alt="img"></p>
+<p>每一次我们调用一个函数，函数都会为自己创建一个Stack Frame，并且只给自己用。函数通过移动 Stack Pointer 来完成 Stack Frame 的空间分配。</p>
+<p>对于 Stack 来说，是从高地址开始向低地址使用。所以栈总是向下增长。当我们想要创建一个新的 Stack Frame 的时候，总是对当前的 Stack Pointer 做减法。一个函数的 Stack Frame 包含了保存的寄存器，本地变量，并且，如果函数的参数多于8个，额外的参数会出现在 Stack 中。所以 Stack Frame 大小并不总是一样，即使在这个图里面看起来是一样大的。不同的函数有不同数量的本地变量，不同的寄存器，所以 Stack Frame 的大小是不一样的。但是有关 Stack Frame 有两件事情是确定的：</p>
+<ul>
+<li><strong>Return address 总是会出现在 Stack Frame 的第一位</strong></li>
+<li><strong>指向前一个 Stack Frame 的指针也会出现在栈中的固定位置</strong></li>
+</ul>
+<p>有关 Stack Frame 中有两个重要的寄存器，第一个是 SP（Stack Pointer），它指向 Stack 的底部并代表了当前 Stack Frame 的位置。第二个是 FP（Frame Pointer），它指向当前 Stack Frame 的顶部。因为 Return address 和指向前一个 Stack Frame 的指针都在当前Stack Frame的固定位置，所以可以通过当前的FP寄存器寻址到这两个数据。</p>
+<p>我们保存前一个Stack Frame的指针的原因是为了让我们能跳转回去。所以当前函数返回时，我们可以将前一个Frame Pointer存储到FP寄存器中。所以我们使用Frame Pointer来操纵我们的Stack Frames，并确保我们总是指向正确的函数。</p>
+<p>Stack Frame 必须要被汇编代码创建，所以是<strong>编译器生成了汇编代码，进而创建了Stack Frame</strong>。所以通常，在汇编代码中，函数的最开始你们可以看到 Function prologue，之后是函数的本体，最后是Epollgue。这就是一个汇编函数通常的样子。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020624180.png" alt="img"></p>
+<p>我们从汇编代码中来看一下这里的操作。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020718715.png" alt="img"></p>
+<p>在我们之前的 sum_to 函数中，只有函数主体，并没有 Stack Frame 的内容。它这里能正常工作的原因是它足够简单，并且它是一个 leaf 函数。leaf 函数是指不调用别的函数的函数，它的特别之处在于它不用担心保存自己的Return address 或者任何其他的Caller Saved寄存器，因为它不会调用别的函数。</p>
+<p>而另一个函数 sum_then_double 就不是一个leaf函数了，这里你可以看到它调用了sum_to。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228020920984.png" alt="img"></p>
+<p>所以在这个函数中，需要包含 prologue。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021006444.png" alt="img"></p>
+<p>这里我们对Stack Pointer减16，这样我们为新的 Stack Frame 创建了16字节的空间。之后我们将 Return address 保存在 Stack Pointer 位置。</p>
+<p>之后就是调用 sum_to 并对结果乘以2，最后是 Epllogue，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021159511.png" alt="image-20220228021159511"></p>
+<p>这里首先将 Return address 加载回 ra 寄存器，通过对 Stack Pointer 加 16 来删除刚刚创建的 Stack Frame，最后 ret 从函数中退出。</p>
+<p>这里我替大家问一个问题，如果我们删除掉Prologue和Epllogue，然后只剩下函数主体会发生什么？有人可以猜一下吗？</p>
+<blockquote>
+<p>学生回答：sum_then_double将不知道它应该返回的Return address。所以调用sum_to的时候，Return address被覆盖了，最终sum_to函数不能返回到它原本的调用位置。</p>
+</blockquote>
+<p>是的，完全正确，我们可以看一下具体会发生什么。先在修改过的sum_then_double设置断点，然后执行sum_then_double。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021659428.png" alt="img"></p>
+<p>我们可以看到现在的ra寄存器是 0x80006392，它指向demo2函数，也就是sum_then_double的调用函数。之后我们执行代码，调用了sum_to。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021649880.png" alt="img"></p>
+<p>我们可以看到ra寄存器的值被 sum_to重写成了0x800065f4，指向sum_then_double，这也合理，符合我们的预期。我们在函数sum_then_double中调用了sum_to，那么sum_to就应该要返回到sum_then_double。</p>
+<p>之后执行代码直到sum_then_double返回。如前面那位同学说的，因为没有恢复sum_then_double自己的Return address，现在的Return address仍然是sum_to对应的值，现在我们就会进入到一个无限循环中。</p>
+<p>我认为这是一个很好的例子用来展示为什么跟踪Caller和Callee寄存器是重要的。</p>
+<p>接下来我们来看一些C代码。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021640522.png" alt="img"></p>
+<p>demo4函数里面调用了dummymain函数。我们在dummymain函数中设置一个断点，</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021631418.png" alt="img"></p>
+<p>现在我们在dummymain函数中。如果我们在gdb中输入info frame，可以看到有关当前Stack Frame许多有用的信息。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090107324.png" alt="image-20220228090107324"></p>
+<ul>
+<li>Stack level 0，表明这是调用栈的最底层</li>
+<li>pc，当前的程序计数器</li>
+<li>saved pc，demo4的位置，表明当前函数要返回的位置</li>
+<li>source language c，表明这是C代码</li>
+<li>Arglist at，表明参数的起始地址。当前的参数都在寄存器中，可以看到 argc &#x3D; 3，argv 是一个地址</li>
+</ul>
+<p>如果输入 <code>backtrace</code>（简写bt）可以看到从当前调用栈开始的所有 Stack Frame。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228021832784.png" alt="image-20220228021832784"></p>
+<p>如果对某一个Stack Frame感兴趣，可以先定位到那个 frame 再输入 <code>info frame</code>，假设对 syscall 的 Stack Frame 感兴趣。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090128324.png" alt="image-20220228090128324"></p>
+<p>在这个Stack Frame中有更多的信息，有一堆的 Saved Registers，有一些本地变量等等。这些信息对于调试代码来说超级重要。</p>
+<blockquote>
+<p>学生提问：为什么有的时候编译器会优化掉 <code>argc</code> 或者 <code>argv</code> ？这个以前发生过。</p>
+<p>TA：这意味着编译器发现了一种更有效的方法，不使用这些变量，而是通过寄存器来完成所有的操作。如果一个变量不是百分百必要的话，这种优化还是很有常见的。我们并没有给你编译器的控制能力，但是在你们的日常使用中，你可以尝试设置编译器的optimization flag为 0，不过就算这样，编译器也会做某些程度的优化。</p>
+</blockquote>
+<h3 id="Struct"><a href="#Struct" class="headerlink" title="Struct"></a>Struct</h3><p>今天我想讨论的最后一个话题是 struct，stuct 非常重要并且在课程的实验中会经常出现。我会稍微介绍一下 struct 在内存中的结构是怎样。基本上来说，struct 在内存中是一段连续的地址，如果我们有一个 struct，并且有f1，f2，f3三个字段。</p>
+<p>当我们创建这样一个struct时，内存中相应的字段会彼此相邻。你可以认为 struct 像是一个数组，但是里面的不同字段的类型可以不一样。（注，这应该是这一节中最有用的一句话了。。。）</p>
+<p>我们可以将struct作为参数传递给函数。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090154065.png" alt="image-20220228090154065"></p>
+<p>这里有一个名字是Person的struct，它有两个字段。我将这个struct作为参数传递给printPerson并打印相关的信息。我们在printPerson中设置一个断点，当程序运行到函数内部时打印当前的Stack Frame。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090208092.png" alt="img"></p>
+<p>我们可以看到当前函数有一个参数p。打印p可以看到这是struct Person的指针，打印p的反引用可以看到struct的具体内容。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220228090227304.png" alt="img"></p>
+<blockquote>
+<p>学生提问：是谁创建了编译器来将C代码转换成各种各样的汇编代码，是不同的指令集创建者，还是第三方？</p>
+<p>TA：我认为不是指令集的创建者，通常是第三方创建的。你们常见的两大编译器，一个是 gcc，这是由 GNU 基金会维护的；一个是 llvm，这个是开源的，你可以查到相应的代码。当一个新的指令集，例如 RISC-V，发布之后，我认为会指令集的创建者和编译器的设计者之间会有一些高度合作。简单来说我认为是第三方配合指令集的创建者完成的编译器。RISC-V 或许是个例外，因为它是来自于一个研究项目，相应的团队或许自己写了编译器，但是我不认为 Intel 对于 gcc 或者 llvm 有任何输入。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="http://acking.cc/2023/01/28/ch06/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1075,8 +1071,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/mit6.s081-ch6" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch6<i class="fa fa-external-link-alt"></i></a>
-          
+            <a href="/2023/01/28/ch06/" class="post-title-link" itemprop="url">mit6.s081-ch6</a>
         </h2>
 
         <div class="post-meta">
@@ -1087,7 +1082,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:36:27" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:43:39" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1509,8 +1504,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/mit6.s081-ch8" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch8<i class="fa fa-external-link-alt"></i></a>
-          
+            <a href="/2023/01/28/ch08/" class="post-title-link" itemprop="url">mit6.s081-ch8</a>
         </h2>
 
         <div class="post-meta">
@@ -1521,7 +1515,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:36:32" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:43:43" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
