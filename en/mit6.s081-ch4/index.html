@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"acking.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Chapter 4 Page Tables存在某种形式的映射关系，并且映射关系对于实现隔离性 isolation 来说有帮助。 地址空间当我们运行 cat 时，它的地址空间从 0 到某个地址结束。当我们运行 Shell 时，它的地址也从 0 开始到某个地址结束。内核的地址空间也从 0 开始到某个地址结束。如果 cat 程序想要向地址 1000 写入数据，那么 cat 只会向它自己的地址 1000，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mit6.s081-ch4">
+<meta property="og:url" content="http://acking.cc/en/mit6.s081-ch4/index.html">
+<meta property="og:site_name" content="AcKing">
+<meta property="og:description" content="Chapter 4 Page Tables存在某种形式的映射关系，并且映射关系对于实现隔离性 isolation 来说有帮助。 地址空间当我们运行 cat 时，它的地址空间从 0 到某个地址结束。当我们运行 Shell 时，它的地址也从 0 开始到某个地址结束。内核的地址空间也从 0 开始到某个地址结束。如果 cat 程序想要向地址 1000 写入数据，那么 cat 只会向它自己的地址 1000，">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002431824.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002924560.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003015460.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003037993.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003501859.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003553962.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003719415.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227004115306.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227004744286.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005059594.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005631204.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005719186.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005730721.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005839429.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010008879.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010120813.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010213494.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010304924.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010526643.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012453315.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012535095.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012614622.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012702699.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012745337.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012925232.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220303100606521.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220303100546908.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013114725.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013151324.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013346242.png">
+<meta property="article:published_time" content="2023-01-27T16:00:00.000Z">
+<meta property="article:modified_time" content="2023-01-28T12:36:19.105Z">
+<meta property="article:author" content="Sam Shen">
+<meta property="article:tag" content="mit6.s081">
+<meta property="article:tag" content="OS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002431824.png">
+
+<link rel="canonical" href="http://acking.cc/en/mit6.s081-ch4/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>mit6.s081-ch4 | AcKing</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">AcKing</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">for dreams</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="en fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="en fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="en fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="en fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="en fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/mit6.s081-ch4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/1.jpg">
+      <meta itemprop="name" content="Sam Shen">
+      <meta itemprop="description" content="share cs knowledge">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AcKing">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/mit6.s081-ch4" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch4<i class="fa fa-external-link-alt"></i></a>
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:36:19" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081/" itemprop="url" rel="index"><span itemprop="name">mit6.s081</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Chapter-4-Page-Tables"><a href="#Chapter-4-Page-Tables" class="headerlink" title="Chapter 4 Page Tables"></a>Chapter 4 Page Tables</h1><p>存在某种形式的映射关系，并且映射关系对于实现隔离性 isolation 来说有帮助。</p>
+<h3 id="地址空间"><a href="#地址空间" class="headerlink" title="地址空间"></a>地址空间</h3><p>当我们运行 <code>cat</code> 时，它的地址空间从 0 到某个地址结束。当我们运行 <code>Shell</code> 时，它的地址也从 0 开始到某个地址结束。内核的地址空间也从 0 开始到某个地址结束。如果 <code>cat</code> 程序想要向地址 1000 写入数据，那么 <code>cat</code> 只会向它自己的地址 1000，而不是向 <code>Shell</code> 的地址 1000 写入数据。</p>
+<p><strong>每个程序都运行在自己的地址空间，并且这些地址空间彼此之间相互独立。在这种不同地址空间的概念中，<code>cat</code> 程序甚至都不具备引用属于 <code>Shell</code> 的内存地址的能力。</strong>这是我们想要达成的终极目标，因为这种方式为我们提供了<strong>强隔离性</strong>，<code>cat</code> 现在不能引用任何不属于自己的内存。</p>
+<p>所以现在的问题是如何在一个物理内存上，创建不同的地址空间，因为归根到底，我们使用的还是一堆存放了内存信息的 DRAM 芯片。</p>
+<blockquote>
+<p>Frans 教授提问：大家们，在XV6中从哪可以看到内存耗尽了？如果你们完成了 syscall 实验，你们会知道在 syscall 实验中有一部分是打印剩余内存的数量。</p>
+<p>学生回答：kalloc？</p>
+<p>Frans教授：是的。<code>kalloc</code> 保存了空余 page 的列表( freelist )，如果这个列表为空或者耗尽了，那么 kalloc 会返回一个空指针，内核会妥善处理并将结果返回给用户应用程序。并告诉用户应用程序，要么是对这个应用程序没有额外的内存了，要么是整个机器都没有内存了。</p>
+<p>内核的一部分工作就是优雅的处理这些情况，这里的优雅是指向用户应用程序返回一个错误消息，而不是直接崩溃。</p>
+</blockquote>
+<h3 id="页表-Page-Table"><a href="#页表-Page-Table" class="headerlink" title="页表(Page Table)"></a>页表(Page Table)</h3><p>我们如何能够在一个物理内存上创建不同的地址空间？</p>
+<p>最常见的方法，同时也是非常灵活的一种方法就是使用页表（Page Tables）。<strong>页表是在硬件中通过处理器和内存管理单元（Memory Management Unit,aka MMU）实现。</strong>所以在脑海中，应该有这么一张图：CPU 正在执行指令，例如 <code>sd $7, (a0)</code></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002431824.png" alt="image-20220227002431824"></p>
+<p><strong>对于任何一条带有地址的指令，其中的地址应该认为是虚拟内存地址而不是物理地址</strong>。假设寄存器 <code>a0</code> 中是地址 <code>0x1000</code> ，那么这是一个虚拟内存地址。虚拟内存地址会被转到内存管理单元（MMU）</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227002924560.png" alt="image-20220227002924560"></p>
+<p>内存管理单元会将虚拟地址翻译成物理地址，之后这个物理地址会被用来索引物理内存，并从物理内存加载，或者向物理内存存储数据。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003015460.png" alt="img"></p>
+<p><strong>从 CPU 的角度来说，一旦 MMU 打开了，它执行的每条指令中的地址都是虚拟内存地址。</strong></p>
+<p>为了能够完成虚拟内存地址到物理内存地址的翻译，MMU 会有一个表单，表单中，一边是虚拟内存地址，另一边是物理内存地址。举个例子，虚拟内存地址 <code>0x1000</code> 对应了一个我随口说的物理内存地址 <code>0xFFF0</code> 。这样的表单可以非常灵活。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003037993.png" alt="img"></p>
+<p><strong>通常，内存地址对应关系的表单也保存在内存中。</strong>所以 CPU 中需要有一些寄存器用来存放<strong>表单在物理内存中的地址。</strong>现在，在内存的某个位置保存了地址关系表单，我们假设这个位置的物理内存地址是 <code>0x10</code> 。那么在 <code>RISC-V</code> 上一个叫做 <strong>SATP</strong> 的寄存器会保存地址 <code>0x10</code>。</p>
+<p>这样，CPU 就可以告诉 MMU，可以从哪找到将虚拟内存地址翻译成物理内存地址的表单。</p>
+<blockquote>
+<p>sqf 注：page table一般存储在内存中，由寄存器 SATP 指向其起始地址。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：所以 MMU 并不会保存 page table，它只会从内存中读取 page table，然后完成翻译，是吗？</p>
+<p>Frans教授：是的，这就是你们应该记住的。<strong>page table 保存在内存中，MMU 只是会去查看 page table</strong>， 我们接下来会看到，page table 比我们这里画的要稍微复杂一些。</p>
+</blockquote>
+<p>这里的基本想法是<strong>每个应用程序都有自己独立的表单，并且这个表单定义了应用程序的地址空间。</strong>所以当操作系统将CPU从一个应用程序切换到另一个应用程序时，同时也需要切换 <strong>SATP</strong> 寄存器中的内容，从而<strong>指向新的进程保存在物理内存中的地址对应表单。</strong>这样的话，<code>cat</code> 程序和 <code>shell</code> 程序中相同的虚拟内存地址，就可以翻译到不同的物理内存地址，因为每个应用程序都有属于自己的不同的地址对应表单。这样说得通吗？</p>
+<blockquote>
+<p>学生提问：刚刚说到 SATP 寄存器会根据进程而修改，我猜每个进程对应的 SATP 值是由内核保存的？</p>
+<p>Frans教授：是的，<strong>内核会写 SATP 寄存器，写 SATP 寄存器是一条特殊权限指令。</strong>所以，用户应用程序不能通过更新这个寄存器来更换一个地址对应表单，否则的话就会破坏隔离性。所以，只有运行在 kernel mode 的代码可以更新这个寄存器。</p>
+</blockquote>
+<p>前面都是最基本的介绍，我们在前面画的图还有做的解释都比较初级且存在明显不合理的地方。有一件事情我刚刚没有提到，这里的表单是如何工作的？从刚刚画的图看来，对于每个虚拟地址，在表单中都有一个条目，如果我们真的这么做，表单会有多大？原则上说，在 RISC-V 上会有多少地址，或者一个寄存器可以保存多少个地址？寄存器是 64bit 的，所以有多少个地址呢？是的，$2^{64}$ 个地址，<strong>所以如果我们以地址为粒度来管理，表单会变得非常巨大</strong>。实际上，所有的内存都会被这里的表单耗尽，所以这一点也不合理。</p>
+<p>所以，实际情况不可能是一个虚拟内存地址对应 page table 中的一个条目。接下来我将分两步介绍 RISC-V 中是如何工作的。</p>
+<ul>
+<li>不要为每个地址创建一条表单条目，而是为每个 page 创建一条表单条目，所以每一次地址翻译都是针对一个 page。而 RISC-V 中，一个 page 是 4KB，也就是 4096 Byte 。这个大小很常见，几乎所有的处理器都使用 4KB 大小的 page 或者支持 4KB 大小的 page。</li>
+</ul>
+<p>现在，内存地址的翻译方式略微的不同了。首先对于虚拟内存地址，我们将它划分为两个部分，index 和 offset，index 用来查找 page，offset 对应的是一个 page 中的哪个字节。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003501859.png" alt="img"></p>
+<p>当 MMU 在做地址翻译的时候，通过读取虚拟内存地址中的 index 可以知道物理内存中的 page 号，这个 page 号对应了物理内存中的 4096 个字节。之后虚拟内存地址中的 offset 指向了 page 中的 4096 个字节中的某一个，假设 offset 是 12，那么 page 中的第 12 个字节被使用了。将 offset 加上 page 的起始地址，就可以得到物理内存地址。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003553962.png" alt="image-20220227003553962"></p>
+<p>有关 RISC-V 的一件有意思的事情是，虚拟内存地址都是 64bit，这也说的通，因为 RISC-V 的寄存器是 64bit 的。但是实际上，在我们使用的 RSIC-V 处理器上，并不是所有的 64bit 都被使用了，也就是说高 25bit 并没有被使用。这样的结果是<strong>限制了虚拟内存地址的数量</strong>，虚拟内存地址的数量现在只有 $2^{39}$ 个，大概是 512 GB。当然，如果必要的话，最新的处理器或许可以支持更大的地址空间，只需要将未使用的 25bit 拿出来做为虚拟内存地址的一部分即可。在有效利用的 39 bit 中，有 27bit 被用来当做 index，12bit 被用来当做 offset，offset 必须是 12bit，因为对应了一个 page 的 4096 个字节。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227003719415.png" alt="img"></p>
+<p>在 RISC-V 中，物理内存地址是 56bit，所以物理内存可以大于单个虚拟内存地址空间，但是也最多到 $2^{56}$。大多数主板还不支持 $2^{56}$ 这么大的物理内存，但是原则上，如果你能造出这样的主板，那么最多可以支持 $2^{56}$ 字节的物理内存。</p>
+<p>物理内存地址是 56bit ，其中 44bit 是物理 page 号（PPN，Physical Page Number），剩下 12bit 是 offset 完全继承自虚拟内存地址（<strong>地址转换时，只需要将虚拟内存中的 27bit 翻译成物理内存中的 44bit 的 page 号，剩下的 12bit offset直接拷贝过来即可</strong>）。</p>
+<p>这里有什么问题吗？这些的内容还挺重要的，你们需要掌握这的内容才能做出下一个 page table lab。</p>
+<blockquote>
+<p>学生：图中的 56bit 是根据什么确定的？</p>
+<p>Frans教授：这是由硬件设计人员决定的，所以 RISC-V 的设计人员认为 56bit 的物理内存地址是个不错的选择。可以假定，他们是通过技术发展的趋势得到这里的数字。比如说，设计是为了满足 5 年的需求，可以预测物理内存在 5 年内不可能超过 $2^{56}$ 这么大。或许，他们预测是的一个小得多的数字，但是为了防止预测错误，他们选择了像 $2^{56}$ 这么大的数字。这里说的通吗？很多同学都问了这个问题。</p>
+<p>学生提问：<strong>如果虚拟内存最多是 $2^{39}$，而物理内存最多是 $2^{56}$，这样我们可以有多个进程都用光了他们的虚拟内存，但是物理内存还有剩余，对吗？</strong></p>
+<p>Frans教授：是的，完全正确。</p>
+<p>学生提问：因为这是一个 64bit 的机器，为什么硬件设计人员本可以用 64bit 但是却用了 56bit？</p>
+<p>Frans教授：选择 56bit 而不是 64bit 是因为在主板上只需要 56 根线。</p>
+</blockquote>
+<p>通过前面的第一步，我们现在的地址转换表是以 page 为粒度，而不是以单个内存地址为粒度，现在这个地址转换表已经可以被称为 page table 了。但是目前的设计还不能满足实际的需求。</p>
+<p>如果每个进程都有自己的 page table，那么每个 page table 表会有多大呢？</p>
+<p>这个page table最多会有 $2^{27}$ 个条目（虚拟内存地址中的 index 长度为27），这是个非常大的数字。如果每个进程都使用这么大的 page table，进程需要为 page table 消耗大量的内存，并且很快物理内存就会耗尽。</p>
+<p>所以实际上，硬件并不是按照这里的方式来存储 page table。从概念上来说，你可以认为 page table 是从 0 到 $2^{27}$ ，但是实际上并不是这样。实际中，page table 是一个多级的结构。下图是一个真正的 RISC-V page table 结构和硬件实现。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227004115306.png" alt="img"></p>
+<p>我们之前提到的虚拟内存地址中的 27bit 的 index，实际上是由 3 个 9bit 的数字组成（L2，L1，L0）。前 9bit 被用来索引最高级的 page directory（注：通常 page directory 是用来索引 page table 或者其他 page directory 物理地址的表单，但是在课程中，page table，page directory， page directory table 区分并不明显，可以都认为是有相同结构的地址对应表单）。</p>
+<p>一个 directory 是 4096 Bytes，就跟 page 的大小是一样的，directory 中的一个条目被称为 PTE（Page Table Entry）是 64 bit，就像寄存器的大小一样，也就是 8 Bytes，所以一个 Directory page 有 512 个条目。</p>
+<p>所以实际上，<strong>SATP 寄存器会指向最高一级的 page directory 的物理内存地址</strong>，之后我们用虚拟内存中 index 的高 9 bit 用来索引最高一级的 page directory，这样我们就能得到一个 PPN，也就是物理 page 号。这个 PPN 指向了中间级的 page directory。</p>
+<p><strong>当我们在使用中间级的 page directory 时，我们通过虚拟内存地址中的 L1 部分完成索引。接下来会走到最低级的 page directory，我们通过虚拟内存地址中的 L0 部分完成索引。在最低级的 page directory 中，我们可以得到对应于虚拟内存地址的物理内存地址。</strong></p>
+<p>从某种程度上来说，与之前一种方案还是很相似的，除了实际的索引是由 3 步，而不是 1 步完成。这种方式的主要优点是，如果地址空间中大部分地址都没有使用，你不必为每一个 index 准备一个条目。</p>
+<blockquote>
+<p> 举个例子，如果你的地址空间只使用了一个page，4096 Byte。除此之外，你没有使用任何其他的地址。现在，你需要多少个 page table entry，或者page table directory来映射这一个page？</p>
+<p>在最高级，你需要一个 page directory。在这个 page directory 中，你需要一个数字是 0 的PTE，指向中间级 page directory。在中间级，你也需要一个 page directory，里面也是一个数字 0 的PTE，指向最低级 page directory。所以这里总共需要 3 个 page directory（也就是 3 * 512 个条目）。</p>
+</blockquote>
+<p>而在前一个方案中，虽然我们只使用了一个page，还是需要 $2^{27}$ 个PTE。而这个方案中，我们只需要 1536 个PTE，所需的空间大大减少了。这是实际上硬件采用这种层次化的 3 级 page directory 结构的主要原因。</p>
+<p>这里有什么问题吗？这部分还是很重要的。</p>
+<blockquote>
+<p>Frans教授：所有的 page directory 传递的都是 PPN，对应的物理地址是 44bit 的PPN加上 12bit 的 0（注，也就是 page 的起始地址，因为每个 page directory 都使用一个完整的 page，所以直接从 page 起始地址开始使用就行）。如果我们查看这里的 PTE 条目，它们都有相同的格式，其中 44bit 是PPN，但是寄存器是 64bit 的，所有有一些 bit 是留空的。<strong>支持 page 的硬件在低 10bit 存了一些标志位用来控制地址权限。</strong></p>
+<p>如果你把 44bit 的 PPN 和 10bit 的 Flags 相加是 54bit，也就是说还有 10bit 未被使用，这 10bit 被用来作为未来扩展。比如说某一天你有了一个新的 RISC-V 处理器，它的 page table 可能略有不同，或许有超过 44bit 的 PPN。如果你看下面这张图，你可以看到，这里有 10bit 是作为保留字段存在的。</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227004744286.png" alt="img"></p>
+<p>接下来，让我们看看PTE中的 Flag，因为它也很重要。每个 PTE 的低 10bit 是一堆标志位：</p>
+<ul>
+<li>第一个标志位是 Valid。如果Valid bit位为1，那么表明这是一条合法的PTE，你可以用它来做地址翻译。对于刚刚举得那个小例子（应用程序只用了1个page的例子），我们只使用了3个page directory，每个page directory中只有第0个PTE被使用了，所以只有第0个PTE的Valid bit位会被设置成1，其他的511个PTE的Valid bit为0。这个标志位告诉MMU，你不能使用这条PTE，因为这条PTE并不包含有用的信息。</li>
+<li>下两个标志位分别是 Readable 和 Writable。表明你是否可以读&#x2F;写这个 page。</li>
+<li>Executable 表明你可以从这个page执行指令。</li>
+<li>User 表明这个 page 可以被运行在用户空间的进程访问。</li>
+<li>其他标志位并不是那么重要，他们偶尔会出现，前面 5个是重要的标志位。</li>
+</ul>
+<blockquote>
+<p>学生提问：我对于这里的 3个 page table 有个问题，PPN是如何合并成最终的物理内存地址？</p>
+<p>Frans教授：我之前或许没有很直接的说这部分，<strong>在最高级的page directory中的PPN，包含了下一级page directory的物理内存地址，依次类推。在最低级page directory，我们还是可以得到 44bit的PPN，这里包含了我们实际上想要翻译的物理page地址，然后再加上虚拟内存地址的 12bit offset，就得到了 56bit物理内存地址</strong>。</p>
+<p>Frans教授：<strong>让我来问自己的一个有趣的问题，为什么是 PPN 存在这些 page directory 中？为什么不是一个虚拟内存地址？</strong></p>
+<p>Frans教授：<strong>我们不能让我们的地址翻译依赖于另一个翻译，否则我们可能会陷入递归的无限循环中。所以 page directory 必须存物理地址。那 SATP 呢？它存的是物理地址还是虚拟地址？</strong></p>
+<p>某学生回答：还是物理地址，因为最高级的 page directory 还是存在物理内存中，对吧。</p>
+<p>Frans教授：是的，这里必须是物理地址，因为我们要用它来完成地址翻译，而不是对它进行地址翻译，所以 <strong>SATP 需要知道最高一级的 page directory 的物理地址是什么。</strong></p>
+<p>学生提问： 这里有层次化的 3个 page table，每个 page table 都由虚拟地址的 9bit 来索引，所以是由虚拟地址中的 3个 9bit来分别索引 3个 page table，对吗？</p>
+<p>Frans教授：是的，最高的 9bit 用来索引最高一级的 page directory，第二个 9bit 用来索引中间级的page directory，第三个 9bit 用来索引最低级的 page directory。</p>
+<p>学生提问：当一个进程请求一个虚拟内存地址时，CPU 会查看 SATP 寄存器得到对应的最高一级 page table，这级 page table 会使用虚拟内存地址中 27bit index 的最高 9bit 来完成索引，如果索引的结果为空，MMU 会自动创建一个 page table吗？</p>
+<p>Frans教授：不会的，MMU 会告诉操作系统或者处理器，抱歉我不能翻译这个地址，最终这会变成一个 page fault。如果一个地址不能被翻译，那就不翻译。就像你在运算时除以 0 一样，处理器会拒绝那样做。</p>
+<p>学生提问：我想知道我们是怎么计算 page table 的物理地址，是不是这样，我们从最高级的 page table 得到 44bit 的PPN，然后再加上虚拟地址中的 12bit offset，就得到了完整的 56bit page table 物理地址？</p>
+<p>Frans教授：我们不会加上虚拟地址中的 offset，这里只是使用了 12bit 的 0，<strong>我们用 44bit 的 PPN，再加上 12bit 的 0，这样就得到了下一级 page directory 的 56bit 物理地址</strong>。这里要求每个 page directory 都与物理 page 对齐（也就是 page directory 的起始地址就是某个 page 的起始地址，所以低 12bit 都为 0）</p>
+</blockquote>
+<h3 id="页表缓存-TLB-Translation-Lookside-Buffer"><a href="#页表缓存-TLB-Translation-Lookside-Buffer" class="headerlink" title="页表缓存 TLB(Translation Lookside Buffer)"></a>页表缓存 TLB(Translation Lookside Buffer)</h3><p>如果我们回想一下 page table 的结构，你可以发现，当处理器从内存加载或者存储数据时，基本上都要做3次内存查找，第一次在最高级的 page directory，第二次在中间级的 page directory，最后一次在最低级的 page directory。所以对于一个虚拟内存地址的寻址，需要读三次内存，这里代价有点高。所以实际中，几乎所有的处理器都会对于最近使用过的虚拟地址的翻译结果有缓存。这个缓存被称为：Translation Lookside Buffer（通常翻译成页表缓存），你会经常看到它的缩写 TLB。基本上来说，这就是 Page Table Entry 的缓存，也就是PTE的缓存。</p>
+<p><strong>当处理器第一次查找一个虚拟地址时，硬件通过 3级 page table 得到最终的 PPN，TLB 会保存虚拟地址到物理地址的映射关系。这样下一次当你访问同一个虚拟地址时，处理器可以查看 TLB，TLB 会直接返回物理地址，而不需要通过 page table 得到结果。</strong></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005059594.png" alt="img"></p>
+<blockquote>
+<p>学生提问：前面说 TLB 会保存虚拟地址到物理地址的对应关系，如果在page 级别做 cache 是不是更加高效？</p>
+<p>Frans教授：有很多种方法都可以实现 TLB，对于你们来说最重要的是知道 TLB 是存在的。TLB 实现的具体细节不是我们要深入讨论的内容。这是处理器中的一些逻辑，对于操作系统来说是不可见的，操作系统也不需要知道 TLB 是如何工作的。<strong>你们需要知道 TLB 存在的唯一原因是，如果你切换了 page table，操作系统需要告诉处理器当前正在切换 page table，处理器会清空 TLB。</strong>因为本质上来说，如果你切换了page table，TLB 中的缓存将不再有用，它们需要被清空，否则地址翻译可能会出错。所以操作系统知道 TLB 是存在的，但只会时不时的告诉操作系统，现在的 TLB 不能用了，因为要切换 page table 了。在 RISC-V 中，清空TLB的指令是 <code>sfence_vma</code> 。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：3级的 page table 是由操作系统实现的还是由硬件自己实现的？</p>
+<p>Frans教授：这是由硬件实现的，所以 3级 page table 的查找都发生在硬件中。<strong>MMU 是硬件的一部分而不是操作系统的一部分。</strong>在 XV6 中，有一个函数也实现了 page table 的查找，因为时不时的 XV6 也需要完成硬件的工作，所以XV6有这个叫做 <code>walk</code> 的函数，它在软件中实现了 MMU 硬件相同的功能。</p>
+<p>学生提问：在这个机制中，TLB 发生在哪一步，是在地址翻译之前还是之后？</p>
+<p>Frans教授：整个 CPU 和 MMU 都在处理器芯片中，所以在一个 RISC-V 芯片中，<strong>有多个 CPU 核，MMU 和 TLB 存在于每一个 CPU核里面。</strong>RISC-V 处理器有 L1 cache，L2 Cache，有些 cache 是根据物理地址索引的，有些 cache 是根据虚拟地址索引的。<strong>由虚拟地址索引的 cache 位于 MMU 之前，由物理地址索引的 cache 位于 MMU 之后。</strong></p>
+<p>学生提问：之前提到，硬件会完成 3级 page table 的查找，那为什么我们要在 XV6 中有一个 walk 函数来完成同样的工作？</p>
+<p>Frans教授：非常好的问题。这里有几个原因：</p>
+<ul>
+<li>首先 XV6 中的 walk 函数设置了最初的 page table，它需要对 3级page table 进行编程，所以它首先需要能模拟 3级 page table。</li>
+<li>另一个原因或许你们已经在 syscall 实验中遇到了，在 XV6 中，内核有它自己的 page table，用户进程也有自己的 page table，<strong>用户进程指向 <code>sys_info</code> 结构体的指针存在于用户空间的 page table，但是内核需要将这个指针翻译成一个自己可以读写的物理地址。</strong>如果你查看 <code>copy_in</code> ，<code>copy_out</code> ，你可以发现内核会通过用户进程的 page table，将用户的虚拟地址翻译得到物理地址，这样内核可以读写相应的物理内存地址。这就是为什么在 XV6 中需要有 walk 函数的一些原因。</li>
+</ul>
+<p>学生提问：为什么硬件不开发类似于 walk 函数的接口？这样我们就不用在 XV6 中用软件实现自己的接口，自己实现还容易有bug。为什么没有一个特殊权限指令，接收虚拟内存地址，并返回物理内存地址？</p>
+<p>Frans教授：其实这就跟你向一个虚拟内存地址写数据，硬件会自动帮你完成工作一样（工作是指翻译成物理地址，并完成数据写入）。你们在page table实验中会完成相同的工作。我们接下来在看XV6的实现的时候会看到更多的内容。</p>
+</blockquote>
+<p>在我们介绍XV6之前，有关 page table 我还想说一点。用时髦的话说，page table 提供了一层抽象（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Indirection">level of indirection</a>）。我这里说的抽象就是指从虚拟地址到物理地址的映射，这里的映射关系完全由操作系统控制。</p>
+<p>因为操作系统对于这里的地址翻译有完全的控制，它可以实现各种各样的功能。比如，当一个 PTE 是无效的，硬件会返回一个 page fault，对于这个 page fault，操作系统可以更新 page table 并再次尝试指令。通过操纵 page table，在运行时有各种各样可以做的事情。我们在之后有一节课专门会讲，当出现 page fault 的时候，操作系统可以做哪些有意思的事情。现在只需要记住，page table 是一个无比强大的机制，它为操作系统提供了非常大的灵活性。这就是为什么 page table 如此流行的一个原因。</p>
+<h3 id="Kernel-Page-Table"><a href="#Kernel-Page-Table" class="headerlink" title="Kernel Page Table"></a>Kernel Page Table</h3><p>接下来，我们看一下在 XV6 中，page table 是如何工作的？首先我们来看一下 kernel page 的分布。下图就是内核中地址的对应关系，左边是内核的虚拟地址空间，右边上半部分是物理内存或者说是DRAM，右边下半部分是 I&#x2F;O 设备。接下来我会首先介绍右半部分，然后再介绍左半部分。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005631204.png" alt="image-20220227005631204"></p>
+<p>图中的右半部分的结构完全由硬件设计者决定。如你们上节课看到的一样，当操作系统启动时，会从地址 <code>0x80000000</code> 开始运行，这个地址其实也是由硬件设计者决定的。具体的来说，如果你们看一个主板，中间是 RISC-V 处理器，我们现在知道了处理器中有 4个核，每个核都有自己的 MMU 和 TLB。处理器旁边就是 DRAM 芯片。主板的设计人员决定了，在完成了虚拟到物理地址的翻译之后，如果得到的物理地址大于 <code>0x80000000</code> 会走向 DRAM 芯片，如果得到的物理地址低于 <code>0x80000000</code> 会走向不同的 I&#x2F;O 设备。这是由这个主板的设计人员决定的物理结构。如果你想要查看这里的物理结构，你可以阅读主板的手册，手册中会一一介绍物理地址对应关系。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005719186.png" alt="img"></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005730721.png" alt="img"></p>
+<p>首先，地址 0 是保留的，地址 <code>0x10090000</code> 对应以太网，地址 <code>0x80000000</code> 对应 DDR 内存，处理器外的易失存储（Off-Chip Volatile Memory），也就是主板上的 DRAM 芯片。所以，在你们的脑海里应该要记住这张主板的图片，即使我们接下来会基于你们都知道的 C 语言程序—QEMU 来做介绍，但是最终所有的事情都是由主板硬件决定的。</p>
+<blockquote>
+<p>学生提问：当你说这里是由硬件决定的，硬件是特指 CPU 还是说 CPU 所在的主板？</p>
+<p>Frans教授：CPU所在的主板，CPU 只是主板的一小部分，DRAM 芯片位于处理器之外。是主板设计者将处理器，DRAM 和许多 I&#x2F;O 设备汇总在一起。对于一个操作系统来说，CPU 只是一个部分，I&#x2F;O 设备同样也很重要。所以当你在写一个操作系统时，你需要同时处理 CPU 和 I&#x2F;O 设备，比如你需要向互联网发送一个报文，操作系统需要调用网卡驱动和网卡来实际完成这个工作。</p>
+</blockquote>
+<p>回到最初那张图的右侧：物理地址的分布。可以看到最下面是未被使用的地址，这与主板文档内容是一致的（地址为0）。<strong>地址 <code>0x1000</code> 是 boot ROM 的物理地址，当你对主板上电，主板做的第一件事情就是运行存储在 boot ROM 中的代码，当 boot 完成之后，会跳转到地址 <code>0x80000000</code>，操作系统需要确保那个地址有一些数据能够接着启动操作系统。</strong></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227005839429.png" alt="img"></p>
+<p>这里还有一些其他的 I&#x2F;O 设备：</p>
+<ul>
+<li>PLIC 是中断控制器（Platform-Level Interrupt Controller）我们下周的课会讲。</li>
+<li>CLINT（Core Local Interruptor）也是中断的一部分。所以多个设备都能产生中断，需要中断控制器来将这些中断路由到合适的处理函数。</li>
+<li>UART（Universal Asynchronous Receiver&#x2F;Transmitter）负责与 console 和显示器交互。</li>
+<li>VIRTIO disk，与磁盘进行交互。</li>
+</ul>
+<p>地址 <code>0x02000000</code> 对应CLINT，当你向这个地址执行读写指令，你是向实现了 CLINT 的芯片执行读写。<strong>这里你可以认为你直接在与设备交互，而不是读写物理内存。</strong></p>
+<blockquote>
+<p>学生提问：确认一下，低于 <code>0x80000000</code> 的物理地址，不存在于 DRAM 中，当我们在使用这些地址的时候，指令会直接走向其他的硬件，对吗？</p>
+<p>Frans教授：是的。高于 <code>0x80000000</code> 的物理地址对应 DRAM 芯片，但是对于例如以太网接口，也有一个特定的低于 <code>0x80000000</code> 的物理地址，我们可以对这个叫做内存映射I&#x2F;O（Memory-mapped I&#x2F;O）的地址执行读写指令，来完成设备的操作。</p>
+<p> 学生提问：为什么物理地址最上面一大块标为未被使用？</p>
+<p>Frans教授：物理地址总共有 $2^{56}$ 那么多，但是你不用在主板上接入那么多的内存。所以不论主板上有多少 DRAM 芯片，总是会有一部分物理地址没有被用到。实际上在 XV6 中，我们限制了内存的大小是 128MB。</p>
+<p>学生提问：当读指令从CPU发出后，它是怎么路由到正确的 I&#x2F;O 设备的？比如说，当 CPU 要发出指令时，它可以发现现在地址是低于 <code>0x80000000</code>，但是它怎么将指令送到正确的I&#x2F;O设备？</p>
+<p>Frans教授：你可以认为在 RISC-V 中有一个多路输出选择器（demultiplexer）。</p>
+</blockquote>
+<p>接下来我会切换到第一张图的左边，这就是 XV6 的虚拟内存地址空间。当机器刚刚启动时，还没有可用的 page，XV6 操作系统会设置好内核使用的虚拟地址空间，也就是这张图左边的地址分布。</p>
+<p>因为我们想让 XV6 尽可能的简单易懂，所以这里的虚拟地址到物理地址的映射，大部分是相等的关系。比如说内核会按照这种方式设置 page table，虚拟地址 <code>0x02000000</code> 对应物理地址 <code>0x02000000</code>。这意味着左侧低于 PHYSTOP 的虚拟地址，与右侧使用的物理地址是一样的。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010008879.png" alt="img"></p>
+<p>所以，这里的箭头都是水平的，因为这里是完全相等的映射。除此之外，这里还有两件重要的事情：</p>
+<p>第一件事情是，有一些 page 在虚拟内存中的地址很靠后，比如 kernel stack 在虚拟内存中的地址就很靠后。这是因为在它之下有一个未被映射的 Guard page，这个 Guard page 对应的 PTE 的 Valid 标志位没有设置，这样，如果 kernel stack 耗尽了，它会溢出到 Guard page，但是因为 Guard page 的 PTE 中 Valid 标志位未设置，会导致立即触发 page fault，这样的结果好过内存越界之后造成的数据混乱。立即触发一个 panic（也就是 page fault），你就知道 kernel stack 出错了。同时我们也又不想浪费物理内存给 Guard page，所以 Guard page 不会映射到任何物理内存，它只是占据了虚拟地址空间的一段靠后的地址。</p>
+<p>同时，kernel stack 被映射了两次，在靠后的虚拟地址映射了一次，在 PHYSTOP 下的 Kernel data 中又映射了一次，但是实际使用的时候用的是上面的部分，因为有 Guard page 会更加安全。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010120813.png" alt="img"></p>
+<p>这是众多你可以通过 page table 实现的有意思的事情之一。你可以<strong>向同一个物理地址映射两个虚拟地址</strong>，你可以不将一个虚拟地址映射到物理地址。可以是一对一的映射，一对多映射，多对一映射。XV6至少在1-2个地方用到类似的技巧。这的 kernel stack 和 Guard page 就是 XV6 基于 page table 使用的有趣技巧的一个例子。</p>
+<p>第二件事情是权限。例如 Kernel text page 被标位 R-X，意味着你可以读它，也可以在这个地址段执行指令，但是你不能向 Kernel text 写数据。通过设置权限我们可以尽早的发现 Bug 从而避免 Bug。对于Kernel data 需要能被写入，所以它的标志位是 RW-，但是你不能在这个地址段运行指令，所以它的 X标志位未被设置。（注，所以，kernel text 用来存代码，代码可以读，可以运行，但是不能篡改，kernel data 用来存数据，数据可以读写，但是不能通过数据伪装代码在 kernel 中运行）</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010213494.png" alt="img"></p>
+<blockquote>
+<p>学生提问：对于不同的进程会有不同的 kernel stack 吗？</p>
+<p>Frans：答案是的，<strong>每一个用户进程都有一个对应的 kernel stack</strong>。</p>
+<p>学生提问：用户程序的虚拟内存会映射到未使用的物理地址空间吗？</p>
+<p>Frans教授：在 kernel page table 中，有一段 Free Memory，它对应了物理内存中的一段地址。</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010304924.png" alt="img"></p>
+<blockquote>
+<p><strong>XV6 使用这段 free memory 来存放用户进程的 page table，text 和 data。如果我们运行了非常多的用户进程，某个时间点我们会耗尽这段内存，这个时候 fork 或者 exec 会返回错误。</strong></p>
+<p>同一个学生提问：这就意味着，用户进程的虚拟地址空间会比内核的虚拟地址空间小的多，是吗？</p>
+<p>Frans教授：本质上来说，两边的虚拟地址空间大小是一样的。但是用户进程的虚拟地址空间使用率会更低。</p>
+<p>学生提问：如果多个进程都将内存映射到了同一个物理位置，这里会优化合并到同一个地址吗？</p>
+<p>Frans教授：XV6 不会做这样的事情，但是 page table 实验中有一部分就是做这个事情。真正的操作系统会做这样的工作。当你们完成了 page table 实验，你们就会对这些内容更加了解。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：每个进程都会有自己的 3级树状 page table，通过这个 page table 将虚拟地址翻译成物理地址。所以看起来当我们将内核虚拟地址翻译成物理地址时，我们并不需要 kernel 的 page table，因为进程会使用自己的树状 page table 并完成地址翻译（注，不太理解这个问题点在哪）。</p>
+<p>Frans教授：当 kernel 创建了一个进程，针对这个进程的 page table 也会从 Free memory 中分配出来。内核会为用户进程的 page table 分配几个 page，并填入 PTE。在某个时间点，当内核运行了这个进程，内核会将进程的根 page table 的地址加载到 SATP 中。从那个时间点开始，处理器会使用内核为那个进程构建的虚拟地址空间。</p>
+<p>同一个学生提问：所以内核为进程放弃了一些自己的内存，但是进程的虚拟地址空间理论上与内核的虚拟地址空间一样大，虽然实际中肯定不会这么大。</p>
+<p>Frans教授：是的，下图是用户进程的虚拟地址空间分布，与内核地址空间一样，它也是从0到MAXVA。</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227010526643.png" alt="img"></p>
+<blockquote>
+<p>它有由内核设置好的，专属于进程的 page table 来完成地址翻译。</p>
+</blockquote>
+<blockquote>
+<p>学生提问：但是我们不能将所有的 MAXVA 地址都使用吧？</p>
+<p>Frans教授：是的我们不能，这样我们会耗尽内存。大多数的进程使用的内存都远远小于虚拟地址空间。</p>
+</blockquote>
+<h3 id="kvminit-函数"><a href="#kvminit-函数" class="headerlink" title="kvminit 函数"></a>kvminit 函数</h3><p>首先，我们来做一个的常规操作，启动我们的 XV6，这里 QEMU 实现了主板，同时我们打开 gdb。</p>
+<p>上一次我们看了 boot 的流程，我们跟到了 main 函数。main 函数中调用的一个函数是 <code>kvminit</code>（3.9），这个函数会<strong>设置好 kernel 的地址空间</strong>。<code>kvminit</code> 的代码如下图所示：</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012453315.png" alt="img"></p>
+<p>我们在前一部分看了 kernel 的地址空间长成什么样，这里我们来看一下代码是如何将它设置好的。首先在 kvminit 中设置一个断点，之后运行代码到断点位置。在 gdb 中执行 layout split，可以看到（从上面的代码也可以看出）函数的第一步是为最高一级 page directory 分配物理 page（注，调用 kalloc就是分配物理 page），下一行将这段内存初始化为 0。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012535095.png" alt="img"></p>
+<p>之后，通过 kvmmap 函数，将每一个 I&#x2F;O 设备映射到内核。例如，下图中高亮的行将 UART0 映射到内核的地址空间。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012614622.png" alt="img"></p>
+<p>我们可以查看一个文件叫做 <code>memlayout.h</code>，它将4.5中的文档翻译成了一堆常量。在这个文件里面可以看到，UART0 对应了地址 <code>0x10000000</code>（注，4.5中的文档是真正 SiFive RISC-V 的文档，而下图是 QEMU 的地址，所以4.5中的文档地址与这里的不符）。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012702699.png" alt="img"></p>
+<p>通过 <code>kvmmap</code> 可以将物理地址映射到相同的虚拟地址（注，因为 kvmmap 的前两个参数一致）。</p>
+<p>在 page table 实验中，第一个练习是实现 vmprint，这个函数会打印当前的 kernel page table。我们现在跳过这个函数，看一下执行完第一个 kvmmap 时的 kernel page table。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012745337.png" alt="img"></p>
+<p>我们来看一下这里的输出。第一行是最高一级 page directory 的地址，这就是存在 SATP 或者将会存在 SATP 中的地址。第二行可以看到最高一级 page directory 只有一条 PTE 序号为0，它包含了中间级 page directory 的物理地址。第三行可以看到中间级的 page directory 只有一条 PTE 序号为128，它指向了最低级 page directory 的物理地址。第四行可以看到最低级的 page directory 包含了 PTE 指向物理地址。你们可以看到最低一级 page directory 中 PTE 的物理地址就是 <code>0x10000000</code>，对应了 UART0。</p>
+<p>前面是物理地址，我们可以从虚拟地址的角度来验证这里符合预期。我们将地址 <code>0x10000000</code> 向右移位 12bit，这样可以得到虚拟地址的高 27bit（index 部分）。之后我们再对这部分右移位 9bit，并打印成 10进制数，可以得到 128，这就是中间级 page directory 中 PTE 的序号。这与之前（4.4）介绍的内容是符合的。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227012925232.png" alt="img"></p>
+<p>从标志位来看（fl 部分），最低一级 page directory 中的 PTE 有读写标志位，并且 Valid 标志位也设置了（4.3底部有标志位的介绍）。</p>
+<p><strong>内核会持续的按照这种方式，调用 kvmmap 来设置地址空间。之后会对 VIRTIO0、CLINT、PLIC、kernel text、kernel data、最后是 TRAMPOLINE 进行地址映射。</strong>最后我们还会调用 vmprint 打印完整的 kernel page directory，可以看出已经设置了很多 PTE。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220303100606521.png" alt="image-20220303100606521"></p>
+<p>这里就不过细节了，但是这些 PTE 构成了我们在 4.5 中看到的地址空间对应关系。</p>
+<blockquote>
+<p>学生：下面这两行内存不会越界吗？</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220303100546908.png" alt="image-20220303100546908"></p>
+<blockquote>
+<p>Frans：不会，这里 KERNBASE 是 <code>0x80000000</code>，这是内存开始的地址。kvmmap 的第三个参数是 size，etext 是 kernel text 的最后一个地址，etext - KERNBASE 会返回 kernel text 的字节数，我不确定这块有多大，大概是 60 - 90 个 page，这部分是 kernel 的 text 部分。PHYSTOP 是物理内存的最大位置，PHYSTOP - text 是 kernel 的 data 部分。会有足够的 DRAM 来完成这里的映射。</p>
+</blockquote>
+<h3 id="kvminithart-函数"><a href="#kvminithart-函数" class="headerlink" title="kvminithart 函数"></a>kvminithart 函数</h3><p>之后，kvminit 函数返回了，在 main 函数中，我们运行到了 kvminithart 函数。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013114725.png" alt="img"></p>
+<p>这个函数首先设置了 SATP 寄存器，<code>kernel_pagetable</code> 变量来自于 kvminit 第一行。所以这里实际上是内核告诉 MMU 来使用刚刚设置好的 page table。当这里这条指令执行之后，下一个指令的地址会发生什么？</p>
+<p>在这条指令之前，还不存在可用的 page table，所以也就不存在地址翻译。执行完这条指令之后，程序计数器（Program Counter）增加了 4。<strong>而之后的下一条指令被执行时，程序计数器会被内存中的 page table 翻译。</strong></p>
+<p>所以这条指令的执行时刻是一个非常重要的时刻。因为整个地址翻译从这条指令之后开始生效，之后的每一个使用的内存地址都可能对应到与之不同的物理内存地址。因为在这条指令之前，我们使用的都是物理内存地址，这条指令之后 page table 开始生效，所有的内存地址都变成了另一个含义，也就是虚拟内存地址。</p>
+<p>这里能正常工作的原因是值得注意的。因为前一条指令还是在物理内存中，而后一条指令已经在虚拟内存中了。比如，下一条指令地址是 <code>0x80001110</code> 就是一个虚拟内存地址。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013151324.png" alt="img"></p>
+<p><strong>为什么这里能正常工作呢？因为 kernel page 的映射关系中，虚拟地址到物理地址是完全相等的。所以，在我们打开虚拟地址翻译硬件之后，地址翻译硬件会将一个虚拟地址翻译到相同的物理地址。所以实际上，我们最终还是能通过内存地址执行到正确的指令，因为经过地址翻译 <code>0x80001110</code> 还是对应 <code>0x80001110</code>。</strong></p>
+<p>管理虚拟内存的一个难点是，一旦执行了类似于 SATP 这样的指令，你相当于将一个 page table 加载到了 SATP 寄存器，你的世界完全改变了。现在每一个地址都会被你设置好的 page table 所翻译。那么假设你的 page table 设置错误了，会发生什么呢？有人想回答这个问题吗？</p>
+<blockquote>
+<p>学生A回答：你可能会覆盖 kernel data。   </p>
+<p>学生B回答：会产生 page fault。</p>
+</blockquote>
+<p>是的，因为 page table 没有设置好，虚拟地址可能根本就翻译不了，那么内核会停止运行并 panic。所以，如果 page table 中有 bug，你将会看到奇怪的错误和崩溃，这导致了 page table 实验将会比较难。如果你不够小心，或者你没有完全理解一些细节，你可能会导致 kernel 崩溃，这将会花费一些时间和精力来追踪背后的原因。但这就是管理虚拟内存的一部分，因为对于一个这么强大的工具，如果出错了，相应的你也会得到严重的后果。我并不是要给你们泼凉水，哈哈。另一方面，这也很有乐趣，经过了 page table 实验，你们会真正理解虚拟内存是什么，虚拟内存能做什么。</p>
+<h3 id="walk-函数"><a href="#walk-函数" class="headerlink" title="walk 函数"></a>walk 函数</h3><blockquote>
+<p>学生提问：我对于 walk 函数有个问题，从代码看它返回了最高级 page table 的 PTE，但是它是怎么工作的呢？（注，应该是学生理解有误，walk 函数模拟了 MMU，返回的是 va 对应的最低级 page table 的 PTE）</p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220227013346242.png" alt="img"></p>
+<blockquote>
+<p>Frans教授：这个函数会返回 page table 的 PTE，而内核可以读写 PTE。我来画个图，首先我们有一个 page directory，这个 page directory 有 512 个 PTE，最下面是 0，最上面是 511。</p>
+</blockquote>
+<blockquote>
+<p>这个函数的作用是返回某一个 PTE 的指针。</p>
+<p>这是个虚拟地址，它指向了这个 PTE。之后内核可以通过向这个地址写数据来操纵这条 PTE 执行的物理 page。当 page table 被加载到 SATP 寄存器，这里的更改就会生效。</p>
+<p>从代码看，这个函数从 L2 走到 L1 然后到 L0，如果参数 alloc 不为 0，且某一个 level 的 page table 不存在，这个函数会创建一个临时的 page table，将内容初始化为 0，并继续运行。所以最后总是返回的是最低一级的 page directory 的 PTE。</p>
+<p>如果参数 alloc 没有设置，那么在第一个 PTE 对应的下一级 page table 不存在时就会返回。</p>
+<p>学生提问：对于 walk 函数，我有一个比较困惑的地方，在写完 SATP 寄存器之后，内核还能直接访问物理地址吗？在代码里面看起来像是通过 page table 将虚拟地址翻译成了物理地址，但是这个时候 SATP 已经被设置了，得到的物理地址不会被认为是虚拟地址吗？</p>
+<p>Frans教授：让我们来看 <code>kvminithart</code> 函数，这里的 <code>kernel_page_table</code> 是一个物理地址，并写入到 SATP 寄存器中。从那以后，我们的代码运行在一个我们构建出来的地址空间中。在之前的 kvminit 函数中，kvmmap 会对每个地址或者每个 page 调用 walk 函数。所以你的问题是什么？</p>
+<p>学生：我想知道，在 SATP 寄存器设置完之后，walk 是不是还是按照相同的方式工作？</p>
+<p>Frans：是的。它还能工作的原因是，内核设置了虚拟地址等于物理地址的映射关系，这里很重要，因为很多地方能工作的原因都是因为内核设置的地址映射关系是相同的。</p>
+<p>学生：每一个进程的 SATP 寄存器存在哪？</p>
+<p>Frans：每个 CPU 核只有一个 SATP 寄存器，但是在每个 proc 结构体，如果你查看 <code>proc.h</code>，里面有一个指向 page table 的指针，这对应了进程的根 page table 物理内存地址。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/mit6-s081/" rel="tag"># mit6.s081</a>
+              <a href="/tags/OS/" rel="tag"># OS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/en/mit6.s081-ch5/" rel="prev" title="mit6.s081-ch5">
+      <i class="fa fa-chevron-left"></i> mit6.s081-ch5
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/en/mit6.s081-ch3/" rel="next" title="mit6.s081-ch3">
+      mit6.s081-ch3 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Chapter-4-Page-Tables"><span class="nav-number">1.</span> <span class="nav-text">Chapter 4 Page Tables</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4"><span class="nav-number">1.0.1.</span> <span class="nav-text">地址空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A1%B5%E8%A1%A8-Page-Table"><span class="nav-number">1.0.2.</span> <span class="nav-text">页表(Page Table)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A1%B5%E8%A1%A8%E7%BC%93%E5%AD%98-TLB-Translation-Lookside-Buffer"><span class="nav-number">1.0.3.</span> <span class="nav-text">页表缓存 TLB(Translation Lookside Buffer)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Kernel-Page-Table"><span class="nav-number">1.0.4.</span> <span class="nav-text">Kernel Page Table</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#kvminit-%E5%87%BD%E6%95%B0"><span class="nav-number">1.0.5.</span> <span class="nav-text">kvminit 函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#kvminithart-%E5%87%BD%E6%95%B0"><span class="nav-number">1.0.6.</span> <span class="nav-text">kvminithart 函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#walk-%E5%87%BD%E6%95%B0"><span class="nav-number">1.0.7.</span> <span class="nav-text">walk 函数</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sam Shen"
+      src="/uploads/1.jpg">
+  <p class="site-author-name" itemprop="name">Sam Shen</p>
+  <div class="site-description" itemprop="description">share cs knowledge</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sam Shen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

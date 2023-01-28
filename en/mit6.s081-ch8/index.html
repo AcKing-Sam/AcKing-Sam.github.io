@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"acking.cc","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="chapter 8 Page FaultPage Fault basics今天的课程内容是 page fault，以及通过 page fault 可以实现的一系列虚拟内存功能。这里相关的功能有：  lazy allocation 这是下一个 lab 的内容 copy-on-write fork demand paging memory mapped files  几乎所有稍微正经的操作系统都实现了">
+<meta property="og:type" content="article">
+<meta property="og:title" content="mit6.s081-ch8">
+<meta property="og:url" content="http://acking.cc/en/mit6.s081-ch8/index.html">
+<meta property="og:site_name" content="AcKing">
+<meta property="og:description" content="chapter 8 Page FaultPage Fault basics今天的课程内容是 page fault，以及通过 page fault 可以实现的一系列虚拟内存功能。这里相关的功能有：  lazy allocation 这是下一个 lab 的内容 copy-on-write fork demand paging memory mapped files  几乎所有稍微正经的操作系统都实现了">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184054218.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184329253.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184922759.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184942825.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184958660.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185259532.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185352953.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185456978.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185828056.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185905449.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185921796.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190202512.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190226653.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190323359.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190627018.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190723589.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190907604.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306191211399.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306191520405.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306191611689.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306191824249.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306192032842.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306192556016.png">
+<meta property="og:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306192814771.png">
+<meta property="article:published_time" content="2023-01-27T16:00:00.000Z">
+<meta property="article:modified_time" content="2023-01-28T12:36:32.100Z">
+<meta property="article:author" content="Sam Shen">
+<meta property="article:tag" content="mit6.s081">
+<meta property="article:tag" content="OS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184054218.png">
+
+<link rel="canonical" href="http://acking.cc/en/mit6.s081-ch8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>mit6.s081-ch8 | AcKing</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">AcKing</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">for dreams</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="en fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="en fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="en fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="en fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="en fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="http://acking.cc/en/mit6.s081-ch8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/1.jpg">
+      <meta itemprop="name" content="Sam Shen">
+      <meta itemprop="description" content="share cs knowledge">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AcKing">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/mit6.s081-ch8" class="post-title-link post-title-link-external" itemprop="url">mit6.s081-ch8<i class="fa fa-external-link-alt"></i></a>
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-01-28 00:00:00 / Modified: 20:36:32" itemprop="dateCreated datePublished" datetime="2023-01-28T00:00:00+08:00">2023-01-28</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081/" itemprop="url" rel="index"><span itemprop="name">mit6.s081</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mit6-s081/OS/" itemprop="url" rel="index"><span itemprop="name">OS</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="chapter-8-Page-Fault"><a href="#chapter-8-Page-Fault" class="headerlink" title="chapter 8 Page Fault"></a>chapter 8 Page Fault</h1><h3 id="Page-Fault-basics"><a href="#Page-Fault-basics" class="headerlink" title="Page Fault basics"></a>Page Fault basics</h3><p>今天的课程内容是 page fault，以及通过 page fault 可以实现的一系列虚拟内存功能。这里相关的功能有：</p>
+<ul>
+<li>lazy allocation 这是下一个 lab 的内容</li>
+<li>copy-on-write fork</li>
+<li>demand paging</li>
+<li>memory mapped files</li>
+</ul>
+<p>几乎所有稍微正经的操作系统都实现了这些功能，比如 Linux 就实现了所有的这些功能。然而在 XV6 中，实话实说，这些功能都没实现。在 XV6 中，一旦用户空间进程触发了 page fault，会导致进程被杀掉，这是非常保守的处理方式。</p>
+<p>在这节课，我们将会探讨在发生 page fault 时可以做的一些有趣的事情。这节课对于代码的讲解会比较少，相应的在设计层面会有更多的内容，毕竟我们也没有代码可以讲解（因为 XV6 中没有实现）。</p>
+<p>另一件重要的事情是，今天课程的内容对应了后面几个实验。下一个实验 lazy lab 今天会发布出来，copy-on-write、fork 和 mmap 也是后续实验的内容。这些都是操作系统中非常有趣的部分，我们将会在实验中花大量时间来研究它。</p>
+<p>在进入到具体细节之前，我们先来简单回顾一下虚拟内存，你可以认为虚拟内存有两个主要的优点：</p>
+<ul>
+<li>第一个是 Isolation，隔离性。虚拟内存使得操作系统可以为每个应用程序提供属于它们自己的地址空间。所以一个应用程序不可能有意或者无意的修改另一个应用程序的内存数据。虚拟内存同时也提供了用户空间和内核空间的隔离性，我们在之前的课程已经谈过很多相关内容，并且你们通过 page table lab 也可以理解虚拟内存的隔离性。</li>
+<li>另一个好处是 level of indirection，提供了一层抽象。处理器和所有的指令都可以使用虚拟地址，而内核会定义从虚拟地址到物理地址的映射关系，这一层抽象是我们这节课要讨论的许多有趣功能的基础。不过到目前为止，在 XV6 中内存地址的映射都比较无聊，实际上在内核中基本上是直接映射（注，也就是虚拟地址等于物理地址）。当然也有几个比较有意思的地方：<ul>
+<li>trampoline page，它使得内核可以将一个物理内存 page 映射到多个用户地址的虚拟空间中。</li>
+<li>guard page，它同时在内核空间和用户空间用来保护 stack</li>
+</ul>
+</li>
+</ul>
+<p>到目前为止，我们介绍的内存地址映射相对来说比较静态。不管是 user page table 还是 kernel page table，都是在最开始的时候设置好，之后就不会再做任何变动。</p>
+<p><strong>page fault 可以让这里的地址映射关系变得动态起来。通过 page fault，内核可以更新 page table，这是一个非常强大的功能。</strong>因为现在可以动态的更新虚拟地址这一层抽象，结合 page table 和 page fault，内核将会有巨大的灵活性。我们接下来会看到各种各样利用动态变更 page table 实现的有趣的功能。</p>
+<p>但是在那之前，我们需要思考的是，内核需要什么样的信息才能够响应 page fault。</p>
+<ul>
+<li><strong>我们需要出错的虚拟地址，或者是触发 page fault 的源。</strong>可以假设的是，你们在 page table lab 中已经看过一些相关的 panic，所以你们可能已经知道，当出现 page fault 的时候，XV6 内核会打印出错的虚拟地址，并且这个地址会被保存在 <code>STVAL</code> 寄存器中。所以，当一个用户应用程序触发了 page fault，page fault 会使用与 Robert 教授上节课介绍的相同的 trap 机制，将程序运行切换到内核，同时也会将出错的地址存放在 STVAL 寄存器中。这是我们需要知道的第一个信息。</li>
+<li><strong>我们需要知道的第二个信息是出错的原因，我们或许想要对不同场景的 page fault 有不同的响应。</strong>不同的场景是指，比如因为 <code>load</code> 指令触发的 page fault、因为 <code>store</code> 指令触发的 page fault 又或者是因为 <code>jump</code> 指令触发的 page fault。实际上，如果你查看 RISC-V 的文档，在 <code>SCAUSE</code>（注，Supervisor cause寄存器，保存了 trap 机制中进入到 supervisor mode 的原因）寄存器的介绍中，有多个与 page fault 相关的原因。比如，13 表示是因为 <code>load</code> 引起的 page fault；15 表示是因为 <code>store</code> 引起的 page fault；12 表示是因为 <code>指令执行</code> 引起的 page fault。<strong>所以第二个信息存在 SCAUSE 寄存器中，其中总共有3个类型的原因与 page fault 相关，分别是读、写和指令。</strong>ECALL 进入到 supervisor mode 对应的是 8，这是我们在上节课中应该看到的 SCAUSE 值。<strong>基本上来说，page fault 和其他的异常使用与系统调用相同的 trap 机制，从用户空间切换到内核空间。</strong>如果是因为 page fault 触发的 trap 机制并且进入到内核空间，STVAL 寄存器和 SCAUSE 寄存器都会有相应的值。</li>
+</ul>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184054218.png" alt="img"></p>
+<ul>
+<li><strong>我们想要知道的第三个信息是触发 page fault 的指令的地址。</strong>从上节课可以知道，作为 trap 处理代码的一部分，这个地址存放在 <code>SEPC</code>（Supervisor Exception Program Counter）寄存器中，并同时会保存在 trapframe -&gt; epc 中。</li>
+</ul>
+<p>所以，从硬件和 XV6 的角度来说，当出现了 page fault，现在有了 3 个对我们来说极其有价值的信息，分别是：</p>
+<ul>
+<li>引起 page fault 的内存源地址</li>
+<li>引起 page fault 的原因类型</li>
+<li>引起 page fault 时的 PC 值，这表明了 page fault 在用户空间发生的位置</li>
+</ul>
+<blockquote>
+<p>我们之所以关心触发 page fault 时的程序计数器值，<strong>是因为在 page fault handler 中我们或许想要修复 page table，并重新执行对应的指令。</strong>理想情况下，修复完 page table 之后，指令就可以无错误的运行了。所以，能够恢复因为 page fault 而中断的指令运行是很重要的。</p>
+</blockquote>
+<p>接下来我们将查看不同虚拟内存功能的实现机制，来帮助我们理解如何利用 page fault handler 修复 page table 并做一些有趣的事情。</p>
+<h3 id="Lazy-page-allocation"><a href="#Lazy-page-allocation" class="headerlink" title="Lazy page allocation"></a>Lazy page allocation</h3><p>我们首先来看一下内存  allocation，或者更具体的说 sbrk。sbrk 是 XV6 提供的系统调用，<strong>它使得用户应用程序能扩大自己的 heap 。</strong>当一个应用程序启动的时候，sbrk 指向的是 heap 的最底端，同时也是 stack 的最顶端。这个位置通过代表进程的数据结构中的 <code>sz</code> 字段表示，这里以 <code>p-&gt;sz</code> 表示。</p>
+<blockquote>
+<p>这里需要记住 <code>p -&gt; sz</code> 的含义，是指栈的顶部，堆的底部。</p>
+</blockquote>
+<p>当调用 <code>sbrk</code> 时，它的参数是整数，代表了你想要申请的 page 数量（<strong>注，原视频说的是 page，但是根据 Linux <a target="_blank" rel="noopener" href="https://man7.org/linux/man-pages/man2/sbrk.2.html">man page</a>，实际中 sbrk 的参数是字节数</strong>）。sbrk 会扩展 heap 的上边界（也就是会扩大 heap）。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184329253.png" alt="image-20220306184329253"></p>
+<p>这意味着，当 sbrk 实际发生或者被调用的时候，内核会分配一些物理内存，并将这些内存映射到用户应用程序的地址空间，然后将内存内容初始化为 0，再返回 sbrk 系统调用。这样，应用程序可以通过多次 sbrk 系统调用来增加它所需要的内存。类似的，应用程序还可以通过给 sbrk 传入负数作为参数，来减少或者压缩它的地址空间，在这节课我们只关注增加内存的场景。</p>
+<blockquote>
+<p>sbrk 传入参数的正负会决定是增加还是减小地址空间</p>
+</blockquote>
+<p><strong>在 XV6 中，sbrk 的实现默认是 eager allocation。</strong>这表示了，一旦调用了 sbrk，内核会<strong>立即</strong>分配应用程序所需要的物理内存。但是实际上，对于应用程序来说很难预测自己需要多少内存，所以通常来说，应用程序倾向于申请多于自己所需要的内存。这意味着，进程的内存消耗会增加许多，但是有部分内存永远也不会被应用程序所使用到。</p>
+<blockquote>
+<p> 你或许会认为这里很蠢，怎么可以这样呢？你可以设想自己写了一个应用程序，读取了一些输入然后通过一个矩阵进行一些运算。你需要为最坏的情况做准备，比如说为最大可能的矩阵分配内存，但是应用程序可能永远也用不上这些内存，通常情况下，应用程序会在一个小得多的矩阵上进行运算。<strong>所以，程序员过多的申请内存但是过少的使用内存，这种情况还挺常见的。</strong></p>
+</blockquote>
+<p>原则上来说，这不是一个大问题。但是使用虚拟内存和 page fault handler，我们完全可以用某种更聪明的方法来解决这里的问题，这里就是利用 <em>lazy allocation</em>，其核心思想非常简单，sbrk 系统调基本上不做任何事情，唯一需要做的事情就是提升 <code>p-&gt;sz</code>，将 <code>p-&gt;sz</code> 增加 n，其中 n 是需要新分配的内存 page 数量。但是内核在这个时间点并不会分配任何物理内存。之后在某个时间点，应用程序使用到了新申请的那部分内存，这时会触发 page fault，因为我们还没有将新的内存映射到 page table。所以，如果我们解析一个大于旧的 <code>p-&gt;sz</code> ，但是又小于新的 <code>p-&gt;sz</code> （注，也就是旧的 <code>p -&gt; sz + n</code>）的虚拟地址，我们希望内核能够分配一个内存 page，并且重新执行指令。</p>
+<p>所以，当我们看到了一个 page fault，相应的虚拟地址小于当前 <code>p-&gt;sz</code> ，同时大于 stack（对应上文所说的大于旧的，小于新的），那么我们就知道这是一个来自于 heap 的地址，但是内核还没有分配任何物理内存。所以对于这个 page fault 的响应也理所当然的直接明了：<strong>在 page fault handler 中，通过 kalloc 函数分配一个内存 page；初始化这个 page 内容为 0；将这个内存 page 映射到 user page table 中；最后重新执行指令。</strong>比方说，如果是 load 指令，或者 store 指令要访问属于当前进程但是还未被分配的内存，在我们映射完新申请的物理内存 page 之后，重新执行指令应该就能通过了。</p>
+<blockquote>
+<p>学生提问：在 eager allocation 的场景，一个进程可能消耗了太多的内存进而耗尽了物理内存资源。如果我们不使用 eager allocation，而是使用 lazy allocation，应用程序怎么才能知道当前已经没有物理内存可用了？</p>
+<p>Frans教授：这是个非常好的问题。从应用程序的角度来看，会有一个错觉：存在无限多可用的物理内存。但是在某个时间点，应用程序可能会用光了物理内存，之后如果应用程序再访问一个未被分配的 page，但这时又没有物理内存，这时内核可以有两个选择，我稍后会介绍更复杂的那个。你们在 lazy lab 中要做的是，返回一个错误并杀掉进程。因为现在已经 <strong>OOM（Out Of Memory）</strong>了，内核也无能为力，所以在这个时间点可以杀掉进程。在这节课稍后的部分会介绍，可以有更加聪明的解决方案。</p>
+<p>学生提问：如何判断一个地址是新分配的内存还是一个无效的地址？</p>
+<p>Frans教授：在地址空间中，我们有 stack，data 和 text。通常来说我们将 <em>p-&gt;sz</em> 设置成一个更大的数，新分配的内存位于旧的 <em>p-&gt;sz</em> 和新的 <em>p-&gt;sz</em> 之间，但是这部分内存还没有实际在物理内存上进行分配。如果使用的地址低于 <em>p-&gt;sz</em>，那么这是一个用户空间的有效地址。如果大于 <em>p-&gt;sz</em>，对应的就是一个程序错误，这意味着用户应用程序在尝试解析一个自己不拥有的内存地址。希望这回答了你的问题。</p>
+</blockquote>
+<p>为了进一步理解 lazy allocation，我们大概来看一下它的代码会是怎么样？这也是今天唯一编程相关的内容。实际上你可能会感到奇怪，相关的代码是如此的简单。这部分代码介绍对于接下来的 lazy lab 或许会有很大的帮助。</p>
+<p>我们首先要修改的是 sys_sbrk 函数，sys_sbrk 会完成实际增加应用程序的地址空间，分配内存等等一系列相关的操作。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184922759.png" alt="img"></p>
+<p>这里我们要修改这个函数，让它只对 p-&gt;sz 加 n，并不执行增加内存的操作。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184942825.png" alt="img"></p>
+<p>修改完之后启动 XV6，并且执行 <code>echo hi</code> ，我们会得到一个 page fault.</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306184958660.png" alt="img"></p>
+<p>之所以会得到一个 page fault 是因为，在 shell 中执行程序，shell 会先 fork 一个子进程，子进程会通过 <code>exec </code> 执行 <code>echo</code> 。在这个过程中，shell 会申请一些内存，所以 shell 会调用 sys_sbrk，然后就出错了（注，因为前面修改了代码，调用 sys_sbrk 不会实际分配所需要的内存）。</p>
+<p>这里输出的内容包含了一些有趣的信息：</p>
+<ul>
+<li>这里输出了 SCAUSE 寄存器内容，我们可以看到它的值是15，表明这是一个 store page fault（详见8.1）；</li>
+<li>我们可以看到进程的 pid 是3，这极可能是 Shell 的 pid；</li>
+<li>我们还可以看到 SEPC 寄存器的值，是 <code>0x12a4</code>；</li>
+<li>最后还可以看到出错的虚拟内存地址，也就是 STVAL 寄存器的内容，是 <code>0x4008</code>。</li>
+</ul>
+<p>我们可以查看 shell 的汇编代码，这是由 Makefile 创建的。我们搜索 SEPC 对应的地址，可以看到这的确是一个store 指令。这看起来就是我们出现 page fault 的位置。</p>
+<p>如果我们向前看看汇编代码，我们可以看到 page fault 是出现在 malloc 的实现代码中。这也非常合理，在 malloc 的实现中，我们使用 sbrk 系统调用来获得一些内存，之后会初始化我们刚刚获取到的内存，在 <code>0x12a4</code> 位置，刚刚获取的内存中写入数据，但是实际上我们在向未被分配的内存写入数据。</p>
+<p>另一个可以证明内存还没有分配的地方是，XV6 中 Shell 通常是有 4 个 page，包含了 text 和 data。出错的地址在 4 个 page 之外，也就是第 5 个 page，实际上我们在 4 个 page 之外 8 个字节。这也合理，因为在 <code>0x12a4</code> 对应的指令中，a0 持有的是 <code>0x4000</code>，而 8 相对 a0 的偏移量。偏移之后的地址就是我们想要使用的地址（注，也就是出错的地址）。</p>
+<p>以上就是 page fault 的信息。我们接下来看看如何能够聪明的处理这里的 page fault。</p>
+<p>首先查看 <code>trap.c</code> 中的 <code>usertrap</code> 函数，<code>usertrap</code> 在 lec06 中有介绍。在 <code>usertrap</code> 中根据不同的 <code>SCAUSE</code> 完成不同的操作。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185259532.png" alt="img"></p>
+<p><strong>在 lec06 中，我们是因为 SCAUSE &#x3D;&#x3D; 8 进入的 trap，这是我们处理普通系统调用的代码。如果 SCAUSE 不等于 8，接下来会检查是否有任何的设备中断，如果有的话处理相关的设备中断。如果两个条件都不满足，这里会打印一些信息，并且杀掉进程。</strong></p>
+<p>现在我们需要增加一个检查，判断 SCAUSE &#x3D;&#x3D; 15，如果符合条件，我们需要一些定制化的处理。我们这里想要做什么样的定制化处理呢？</p>
+<blockquote>
+<p>学生回答：我们想要检查 p-&gt;sz 是否大于当前存在 STVAL 寄存器中的虚拟地址。如果大于的话，就实际分配物理内存。</p>
+</blockquote>
+<p>这是一种处理方式，这里我会以演示为目的简单的处理一下，在 lazy lab 中你们需要完成更多的工作。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185352953.png" alt="img"></p>
+<p>在上面增加的代码中，首先打印一些调试信息。之后分配一个物理内存 page，如果 ka 等于 0，表明没有物理内存我们现在 OOM 了，我们会杀掉进程。如果有物理内存，首先会将内存内容设置为 0，之后将物理内存 page 指向用户地址空间中合适的虚拟内存地址。具体来说，我们首先将虚拟地址向下取整，这里引起 page fault 的虚拟地址是 <code>0x4008</code>，向下取整之后是 <code>0x4000</code>。之后我们将物理内存地址跟取整之后的虚拟内存地址的关系加到 <code>page table</code> 中。对应的 <code>PTE</code> 需要设置常用的权限标志位，在这里是 <code>U，W，R</code> bit 位。</p>
+<p>接下来运行一些这部分代码。先重新编译 XV6，再执行 <code>echo hi</code>，我们或许可以乐观的认为现在可以正常工作了。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185456978.png" alt="img"></p>
+<p>但是实际上并没有正常工作。我们这里有两个 page fault，第一个对应的虚拟内存地址是 <code>0x4008</code>，但是很明显在处理这个 <code>page fault</code> 时，我们又有了另一个 <code>page fault</code>  <code>0x13f48</code>。现在唯一的问题是，<code>uvmunmap</code> 在报错，一些它尝试 unmap 的 page 并不存在。</p>
+<blockquote>
+<p>Q：这里 unmap 的内存是什么？</p>
+</blockquote>
+<blockquote>
+<p>学生回答：之前 lazy allocation 但是又没有实际分配的内存。</p>
+</blockquote>
+<p>是的，完全正确。这里 unmap 的是之前 lazy allocated，但是又还没有用到的地址。所以对于这个内存，并没有对应的物理内存。所以在 uvmunmap 函数中，当 PTE 的 V 标志位为 0 并且没有对应的 mapping，这并不是一个实际的 panic，这是我们预期的行为。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185828056.png" alt="img"></p>
+<p>实际上，对于这个 page 我们并不用做任何事情，我们可以直接 continue 跳到下一个 page。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185905449.png" alt="img"></p>
+<p>接下来，我们再重新编译 XV6，并执行“echo hi”。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306185921796.png" alt="img"></p>
+<p>现在我们可以看到 2个page fault，但是echo hi正常工作了。现在，我们一定程度上有了最基本最简单的lazy allocation。这里有什么问题吗？</p>
+<blockquote>
+<p>学生提问：我并不能理解为什么在 uvmunmap 中可以直接改成 continue？</p>
+<p>Frans教授：之前的 panic 表明，我们尝试在释放一个并没有 map 的 page。怎么会发生这种情况呢？唯一的原因是 sbrk 增加了 <code>p-&gt;sz</code> ，但是应用程序还没有使用那部分内存。因为对应的物理内存还没有分配，所以这部分新增加的内存的确没有映射关系。我们现在是 lazy allocation，我们只会为需要的内存分配物理内存page。如果我们不需要这部分内存，那么就不会存在 map 关系，这非常的合理。相应的，我们对于这部分内存也不能释放，因为没有实际的物理内存可以释放，所以这里最好的处理方式就是 continue，跳过并处理下一个page。</p>
+<p>学生提问：在 <code>uvmunmap</code> 中，我认为之前的panic存在是有理由的，我们是不是应该判断一下，然后对于特定的场景还是 panic？</p>
+<p>Frans教授：为什么之前的 panic 会存在？对于未修改的 XV6，永远也不会出现用户内存未 map 的情况，所以一旦出现这种情况需要 panic。但是现在我们更改了 XV6，所以我们需要去掉这里的 panic，因为之前的不可能变成了可能。</p>
+</blockquote>
+<p>这部分内容对于下一个实验有很大的帮助，实际上这是下一个实验 3 个部分中的一个，但是很明显这部分不足以完成下一个 lazy lab。我们这里做了一些修改，但是很多地方还是有可能出错。就像有人提到的，我这里并没有检查触发 page fault 的虚拟地址是否小于 <em>p-&gt;sz</em>。还有其他的可能出错的地方吗？</p>
+<blockquote>
+<p>学生回答：通过 sbrk 增加的用户进程的内存数是一个整型数而不是一个无符号整型数，可能会传入负数。</p>
+</blockquote>
+<p>是的，可能会使用负数，这意味着缩小用户内存。当我们在缩小用户内存时，我们也需要小心一些。实际上，在一个操作系统中，我们可能会在各种各样的用户场景中使用这里的 PTE，对于不同的用户场景我们或许需要稍微修改XV6，这就是接下来的 lazy lab 的内容。你们需要完成足够多的修改，才能通过所有的测试用例。</p>
+<h3 id="Zero-Fill-On-Demand"><a href="#Zero-Fill-On-Demand" class="headerlink" title="Zero Fill On Demand"></a>Zero Fill On Demand</h3><p>接下来我将讨论基于 page fault 和 page table 可以做的一些其他酷的事情。另一个简单但是使用的非常频繁的功能是 zero-fill-on-demand。</p>
+<p>当你查看一个用户程序的地址空间时，存在 text 区域，data 区域，同时还有一个 BSS 区域<strong>（注：BSS区域包含了未被初始化或者初始化为0的全局或者静态变量）。</strong>当编译器在生成二进制文件时，编译器会填入这三个区域。text 区域是程序的指令，data 区域存放的是初始化了的全局变量，BSS 包含了未被初始化或者初始化为0的全局变量。</p>
+<p>之所以这些变量要单独列出来，是因为例如你在 C 语言中定义了一个大的矩阵作为全局变量，它的元素初始值都是 0，为什么要为这个矩阵分配内存呢？其实只需要记住这个矩阵的内容是 0 就行。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190202512.png" alt="img"></p>
+<p>在一个正常的操作系统中，如果执行 exec，exec 会申请地址空间，里面会存放 text 和 data。因为 BSS 里面保存了未被初始化的全局变量，这里或许有许多许多个 page，但是所有的 page 内容都为 0。</p>
+<p><strong>通常可以调优的地方是，我有如此多的内容全是 0 的 page，在物理内存中，我只需要分配一个 page，这个 page 的内容全是 0。然后将所有虚拟地址空间的全 0 的 page 都 map 到这一个物理 page上。这样至少在程序启动的时候能节省大量的物理内存分配。</strong></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190226653.png" alt="img"></p>
+<p>当然这里的 mapping 需要非常的小心，<strong>我们不能允许对于这个 page 执行写操作，</strong>因为所有的虚拟地址空间 page 都期望 page 的内容是全 0，所以<strong>这里的 PTE 都是只读的。</strong>之后在某个时间点，应用程序尝试写 BSS 中的一个 page 时，比如说需要更改一两个变量的值，我们会得到 page fault。那么，对于这个特定场景中的 page fault我们该做什么呢？</p>
+<blockquote>
+<p>学生回答：我认为我们应该创建一个新的 page，将其内容设置为 0，并重新执行指令。</p>
+</blockquote>
+<blockquote>
+<p>教授：是的，完全正确。假设 store 指令发生在 BSS 最顶端的 page 中。我们想要做的是：</p>
+<ul>
+<li>在物理内存中申请一个新的内存 page，将其内容设置为 0，因为我们预期这个内存的内容为 0。</li>
+<li>之后我们需要更新这个 page 的 mapping 关系，首先 PTE 要设置成可读可写，然后将其指向新的物理 page。</li>
+<li>这里相当于更新了 PTE，之后我们可以重新执行指令。</li>
+</ul>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190323359.png" alt="img"></p>
+<p><strong>为什么这是一个好的优化，或者说为什么操作系统要这么做？</strong></p>
+<blockquote>
+<p>学生回答：这样节省一部分内存。你可以在需要的时候才申请内存。</p>
+</blockquote>
+<blockquote>
+<p>教授：是的，这里类似于 lazy allocation。假设程序申请了一个大的数组，来保存可能的最大的输入，并且这个数组是全局变量且初始为 0，但是最后或许只有一小部分内容会被使用。</p>
+</blockquote>
+<p>第二个好处是在 <code>exec</code> 中需要做的工作变少了。程序可以启动的更快，这样你可以获得更好的交互体验，因为你只需要分配一个内容全是 0 的物理 page。所有的虚拟 page 都可以映射到这一个物理 page 上。</p>
+<blockquote>
+<p>学生提问：但是因为每次都会触发一个 page fault，update 和 write 会变得更慢吧？</p>
+<p>Frans教授：是的，这是个很好的观点，所以这里是实际上我们将一些操作推迟到了 page fault 再去执行。并且我们期望并不是所有的 page 都被使用了。如果一个 page 是 4096 字节，我们只需要对每 4096 个字节消耗一次 page fault 即可。但是这里是个好的观点，我们的确增加了一些由 page fault 带来的代价。</p>
+</blockquote>
+<blockquote>
+<p>Q：page fault 的代价是多少呢？我们该如何看待它？这是一个与 store 指令相当的代价，还是说代价要高的多？</p>
+<p>学生回答：代价要高的多。store 指令可能需要消耗一些时间来访问 RAM，但是 page fault 需要走到内核。</p>
+</blockquote>
+<p>是的，在 lec06 中你们已经看到了，仅仅是在 trap 处理代码中，就有至少有 100 个 store 指令用来存储当前的寄存器。除此之外，还有从用户空间转到内核空间的额外开销。所以，page fault 并不是没有代价的，之前问的那个问题是一个非常好的问题。</p>
+<h3 id="Copy-on-Write-Fork"><a href="#Copy-on-Write-Fork" class="headerlink" title="Copy on Write Fork"></a>Copy on Write Fork</h3><p>这个是一个非常常见的优化，许多操作系统都实现了它，同时它也是后面一个实验的内容。这就是 copy-on-write fork，有时也称为 COW fork。</p>
+<p>当 Shell 处理指令时，它会通过 fork 创建一个子进程。fork 会创建一个 Shell 进程的拷贝，所以这时我们有一个父进程（即 Shell）和一个子进程。Shell 的子进程执行的第一件事情就是调用 exec 运行一些其他程序，比如运行 echo。现在的情况是，fork 创建了 Shell 地址空间的一个完整的拷贝，而 exec 做的第一件事情就是丢弃这个地址空间，取而代之的是一个包含了 echo 的地址空间。这里看起来有点浪费。</p>
+<p>所以，我们最开始有了一个父进程的虚拟地址空间，然后我们有了子进程的虚拟地址空间。在物理内存中，XV6 中的 Shell 通常会有 4 个page，当调用 fork 时，基本上就是创建了 4 个新的 page，并将父进程 page 的内容拷贝到 4 个新的子进程的 page 中。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190627018.png" alt="img"></p>
+<p>但是之后，一旦调用了 exec，我们又会释放这些 page，并分配新的 page 来包含 echo 相关的内容。<strong>所以对于这个特定场景有一个非常有效的优化：当我们创建子进程时，与其创建、分配并拷贝内容到新的物理内存，其实我们可以直接共享父进程的物理内存 page。所以这里，我们可以设置子进程的 PTE 指向父进程对应的物理内存 page。</strong></p>
+<blockquote>
+<p>总结一下，就是 fork 之后，子进程直接共享父进程的物理内存 page，需要注意的是，需要将父进程和子进程的 PTE 标志位均设为只读。 </p>
+</blockquote>
+<p>当然，需要提及的是，我们这里需要非常小心。因为一旦子进程想要修改这些内存的内容，相应的更新应该对父进程不可见，因为我们希望在父进程和子进程之间有强隔离性，所以这里我们需要更加小心一些。<strong>为了确保进程间的隔离性，我们可以将这里的父进程和子进程的 PTE 的标志位都设置成只读的。</strong></p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190723589.png" alt="img"></p>
+<p>在某个时间点，当我们需要更改内存的内容时，我们会得到 page fault。因为父进程和子进程都会继续运行，而父进程或者子进程都可能会执行 store 指令来更新一些全局变量，这时就会触发 page fault，因为现在在向一个只读的 PTE 写数据。</p>
+<p>在得到 page fault 之后，我们需要拷贝相应的物理 page：</p>
+<ul>
+<li>假设现在是子进程在执行 store 指令，那么我们会分配一个新的物理内存 page，然后将 page fault 相关的物理内存 page 拷贝到新分配的物理内存 page 中</li>
+<li>并将新分配的物理内存 page 映射到子进程。</li>
+<li>这时，新分配的物理内存 page 只对子进程的地址空间可见，所以我们可以将相应的 PTE 设置成可读写，并且我们可以重新执行 store 指令。实际上，对于触发刚刚 page fault 的物理 page，因为现在只对父进程可见，相应的PTE对于父进程也变成可读写的了。</li>
+</ul>
+<blockquote>
+<p><em>这块我不太赞同，关于父进程的相应 PTE 是否会变为可读写的，父进程怎么判断是否还有子进程绑定到该 PTE 上。</em></p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306190907604.png" alt="img"></p>
+<p>所以现在，我们拷贝了一个 page，将新的 page 映射到相应的用户地址空间，并重新执行用户指令。重新执行用户指令是指调用 userret 函数（注，详见6.8），也即是 lec06 中介绍的返回到用户空间的方法。</p>
+<blockquote>
+<p>学生提问：我们如何发现父进程写了这部分内存地址？是与子进程相同的方法吗？</p>
+<p>Frans教授：是的，因为子进程的地址空间来自于父进程的地址空间的拷贝。如果我们使用了特定的虚拟地址，因为地址空间是相同的，不论是父进程还是子进程，都会有相同的处理方式。</p>
+<p>学生提问：对于一些没有父进程的进程，比如系统启动的第一个进程，它会对于自己的 PTE 设置成只读的吗？还是设置成可读写的，然后在 fork 的时候再修改成只读的？</p>
+<p>Frans教授：这取决于你。实际上在 lazy lab 之后，会有一个 copy-on-write lab。在这个 lab 中，你自己可以选择实现方式。当然最简单的方式就是将 PTE 设置成只读的，当你要写这些 page 时，你会得到一个 page fault，之后你可以再按照上面的流程进行处理。</p>
+<p>学生提问：因为我们经常会拷贝用户进程对应的 page，内存硬件有没有实现特定的指令来完成拷贝，因为通常来说内存会有一些读写指令，但是因为我们现在有了从 page A 拷贝到 page B 的需求，会有相应的拷贝指令吗？</p>
+<p>Frans教授：x86 有硬件指令可以用来拷贝一段内存。但是 RISC-V 并没有这样的指令。当然在一个高性能的实现中，所有这些读写操作都会流水线化，并且按照内存的带宽速度来运行。</p>
+<p>在我们这个例子中，我们只需要拷贝 1 个 page，对于一个未修改的 XV6 系统，我们需要拷贝 4 个 page。所以这里的方法明显更好，因为内存消耗的更少，并且性能会更高，fork 会执行的更快。</p>
+<p><strong>这个问题牛逼</strong>：学生提问：当发生 page fault 时，我们其实是在向一个只读的地址执行写操作。内核如何能分辨现在是一个 copy-on-write fork 的场景，而不是应用程序在向一个正常的只读地址写数据。是不是说默认情况下，用户程序的 PTE 都是可读写的，除非在 copy-on-write fork 的场景下才可能出现只读的 PTE ？</p>
+<p>Frans教授：内核必须要能够识别这是一个 copy-on-write 场景。几乎所有的 page table 硬件都支持了这一点。我们之前并没有提到相关的内容，下图是一个常见的多级 page table。对于 PTE 的标志位，我之前介绍过第 0 bit到第 7 bit，但是没有介绍最后两位 RSW。这两位保留给 supervisor software 使用，supervisor softeware 指的就是内核。内核可以随意使用这两个 bit 位。<strong>所以可以做的一件事情就是，将bit 8 标识为当前是一个copy-on-write page。</strong></p>
+</blockquote>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306191211399.png" alt="img"></p>
+<blockquote>
+<p>当内核在管理这些 page table 时，对于 copy-on-write 相关的 page，内核可以设置相应的 bit 位，这样当发生 page fault 时，我们可以发现如果 copy-on-write bit 位设置了，我们就可以执行相应的操作了。否则的话，比如说 lazy allocation，我们就做一些其他的处理操作。</p>
+<p>在 copy-on-write lab 中，你们会使用 <code>RSW</code> 在 PTE 中设置一个 copy-on-write 标志位。</p>
+</blockquote>
+<p>在 copy-on-write lab 中，还有个细节需要注意。<strong>目前在 XV6 中，除了 trampoline page 外，一个物理内存 page 只属于一个用户进程。</strong> trampoline page 永远也不会释放，所以也不是什么大问题。但是对于这里的物理内存 page，现在有多个用户进程或者说多个地址空间都指向了相同的物理内存 page，举个例子，当父进程退出时我们需要更加的小心，因为我们要判断是否能立即释放相应的物理 page。如果有子进程还在使用这些物理  page，而内核又释放了这些物理 page，我们将会出问题。那么现在释放内存 page 的依据是什么呢？</p>
+<p>我们需要对于每一个物理内存 page 的引用进行计数，当我们释放虚拟 page 时，我们将物理内存 page 的引用数减 1，如果引用数等于 0，那么我们就能释放物理内存 page。所以在 copy-on-write lab 中，你们需要引入一些额外的数据结构或者元数据信息来完成引用计数。</p>
+<blockquote>
+<p>学生提问：我们可以将引用计数存在 RSW 对应的 2 个bit中吗？并且限制不超过 4 个引用。</p>
+<p>Frans教授：讲道理，如果引用超过了 4 次，那么将会是一个问题。因为一个内存引用超过了 4 次，你将不能再使用这里的优化了。但是这里的实现方式是自由的。</p>
+<p>学生提问：真的有必要额外增加一位来表示当前的 page 是 copy-on-write 吗？因为内核可以维护有关进程的一些信息…</p>
+<p>Frans教授：是的，你可以在管理用户地址空间时维护一些其他的元数据信息，这样你就知道这部分虚拟内存地址如果发生了 page fault，那么必然是 copy-on-write 场景。实际上，在后面的一个实验中，你们需要出于相同的原因扩展 XV6 管理的元数据。在你们完成这些实验时，具体的实现是很自由的。</p>
+</blockquote>
+<h3 id="Demand-Paging"><a href="#Demand-Paging" class="headerlink" title="Demand Paging"></a>Demand Paging</h3><p>接下来我们将介绍 Demand paging。这是另一个非常流行的功能，许多操作系统都实现了它。</p>
+<p>我们回到 exec，在未修改的 XV6 中，操作系统会加载程序内存的 text 、data 区域，并且以 eager 的方式将这些区域加载进 page table。</p>
+<p>但是根据我们在 lazy allocation 和 zero-filled on demand 的经验，为什么我们要以 eager 的方式将程序加载到内存中？为什么不再等等，直到应用程序实际需要这些指令的时候再加载内存？程序的二进制文件可能非常的巨大，将它全部从磁盘加载到内存中将会是一个代价很高的操作。又或者 data 区域的大小远大于常见的场景所需要的大小，我们并不一定需要将整个二进制都加载到内存中。</p>
+<p>所以对于 exec，在虚拟地址空间中，我们为 text 和 data 分配好地址段，但是相应的 PTE 并不对应任何物理内存page。对于这些 PTE，我们只需要将 valid bit 位设置为 0 即可。</p>
+<p>如果我们修改 XV6 使其按照上面的方式工作，我们什么时候会得到第一个 page fault 呢？或者说，用户应用程序运行的第一条指令是什么？用户应用程序在哪里启动的？</p>
+<p>应用程序是从地址 0 开始运行。text 区域从地址 0 开始向上增长。位于地址 0 的指令是会触发第一个 page fault的指令，因为我们还没有真正的加载内存。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306191520405.png" alt="img"></p>
+<p>那么该如何处理这里的 page fault 呢？</p>
+<ul>
+<li>首先我们可以发现，这些 page 是 on-demand page。我们需要在某个地方记录了这些 page 对应的程序文件，我们在 page fault handler 中需要从程序文件中读取 page 数据，加载到内存中；</li>
+<li>之后将内存 page 映射到 page table；</li>
+<li>最后再重新执行指令。</li>
+</ul>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306191611689.png" alt="img"></p>
+<p>之后程序就可以运行了。在最坏的情况下，用户程序使用了 text 和 data 中的所有内容，那么我们将会在应用程序的每个 page 都收到一个 page fault。但是如果我们幸运的话，用户程序并没有使用所有的 text 区域或者 data 区域，那么我们一方面可以节省一些物理内存，另一方面我们可以让 exec 运行的更快（注，因为不需要为整个程序分配内存）。</p>
+<p>前面描述的流程其实是有点问题的：<strong>我们将要读取的文件，它的 text 和 data 区域可能大于物理内存的容量。又或者多个应用程序按照 demand paging 的方式启动，它们二进制文件的和大于实际物理内存的容量。</strong>对于 demand paging 来说，假设内存已经耗尽了或者说 OOM 了，这个时候如果得到了一个 page fault，需要从文件系统拷贝中拷贝一些内容到内存中，但这时你又没有任何可用的物理内存 page，这其实回到了之前的一个问题：在 lazy allocation 中，如果内存耗尽了该如何办？</p>
+<p>如果内存耗尽了，一个选择是撤回 page（evict page）。比如说将部分内存 page 中的内容写回到文件系统再撤回 page。一旦你撤回并释放了 page，那么你就有了一个新的空闲的 page，你可以使用这个刚刚空闲出来的 page，分配给刚刚的 page fault handler，再重新执行指令。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306191824249.png" alt="img"></p>
+<p>重新运行指令稍微有些复杂，这包含了整个 userret 函数背后的机制以及将程序运行切换回用户空间等等。</p>
+<p>以上就是常见操作系统的行为。这里的关键问题是，什么样的 page 可以被撤回？并且该使用什么样的策略来撤回page？</p>
+<blockquote>
+<p>学生回答：Least Recently Used(LRU)</p>
+</blockquote>
+<blockquote>
+<p>教授：是的，这是最常用的策略，Least Recently Used，或者叫 LRU。除了这个策略之外，还有一些其他的小优化。如果你要撤回一个 page，你需要在 dirty page 和 non-dirty page 中做选择。dirty page 是曾经被写过的 page，而 non-dirty page 是只被读过，但是没有被写过的 page。你们会选择哪个来撤回？</p>
+</blockquote>
+<blockquote>
+<p>学生回答：我会选择 dirty page，因为它在某个时间点会被重新写回到内存中。</p>
+</blockquote>
+<blockquote>
+<p>教授：如果 dirty page 之后再被修改，现在你或许需要对它写两次了（注，一次内存，一次文件），<strong>现实中会选择 non-dirty page</strong>。如果 non-dirty page 出现在 page table 中，你可以将内存 page 中的内容写到文件中，之后将相应的 PTE 标记为 non-valid，这就完成了所有的工作。之后你可以在另一个 page table 重复使用这个 page。所以<strong>通常来说这里优先会选择 non-dirty page 来撤回。</strong></p>
+</blockquote>
+<blockquote>
+<p>学生提问：对于一个 cache，我们可以认为它被修改了但是还没有回写到后端存储时是 dirty 的。那么对于内存 page 来说，怎么判断 dirty？它只存在于内存中，而不存在于其他地方。那么它什么时候会变成 dirty 呢？</p>
+<p>Frans教授：对于memory mapped files，你将一个文件映射到内存中，然后恢复它，你就会设置内存 page为 dirty。</p>
+<p>学生提问：所以这只对一个不仅映射了内存，还映射了文件的 page 有效？</p>
+<p>Frans教授：是的，完全正确。（注，这里应该是答非所问，一个 page 只要最近被写过，那么就会是 dirty的）</p>
+</blockquote>
+<p>如果你们再看 PTE，我们有 RSW 位，你们可以发现在 bit7，对应的就是 Dirty bit。当硬件向一个 page 写入数据，会设置 dirty bit，之后操作系统就可以发现这个 page 曾经被写入了。类似的，还有一个 Access bit，任何时候一个 page 被读或者被写了，这个 Access bit 会被设置。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306192032842.png" alt="img"></p>
+<p>为什么这两个信息重要呢？它们能怎样帮助内核呢？</p>
+<blockquote>
+<p>学生回答：没有被 Access 过的 page 可以直接撤回，是吗？</p>
+</blockquote>
+<p>是的，或者说如果你想实现 LRU，你需要找到一个在一定时间内没有被访问过的 page，那么这个 page 可以被用来撤回。而被访问过的 page 不能被撤回。所以 Access bit 通常被用来实现这里的LRU策略。</p>
+<blockquote>
+<p>学生提问：那是不是要定时的将 Access bit 恢复成 0？</p>
+<p>Frans教授：是的，这是一个典型操作系统的行为。操作系统会扫描整个内存，这里有一些著名的算法例如 clock algorithm，就是一种实现方式。</p>
+<p>另一个学生提问：为什么需要恢复这个 bit？</p>
+<p>Frans教授：如果你想知道 page 最近是否被使用过，你需要定时比如每 100 毫秒或者每秒清除 Access  bit，如果在下一个 100 毫秒这个 page 被访问过，那你就知道这个 page 在上一个 100 毫秒中被使用了。而Access bit为0的page在上100毫秒未被使用。这样你就可以统计每个内存page使用的频度，这是一个成熟的LRU实现的基础。（注，可以通过 Access bit 来决定内存 page 在 LRU 中的排名）</p>
+</blockquote>
+<h3 id="Memory-Paging-Files"><a href="#Memory-Paging-Files" class="headerlink" title="Memory Paging Files"></a>Memory Paging Files</h3><p>这节课最后要讨论的内容，也是后面的一个实验，就是 memory mapped files。<strong>这里的核心思想是，将完整或者部分文件加载到内存中，这样就可以通过内存地址相关的 load 或者 store 指令来操纵文件。</strong>为了支持这个功能，一个现代的操作系统会提供一个叫做 mmap 的系统调用。这个系统调用会接收一个虚拟内存地址（VA），长度（len），protection，一些标志位，一个打开文件的文件描述符，和偏移量（offset）。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306192556016.png" alt="img"></p>
+<p><strong>这里的语义是，从文件描述符对应的文件的偏移量的位置开始，映射长度为 len 的内容到虚拟内存地址 VA，同时我们需要加上一些保护，比如只读或者读写。</strong></p>
+<p>假设文件内容是读写并且内核实现 mmap 的方式是 eager 方式（不过大部分系统都不会这么做），内核会从文件的 offset 位置开始，将数据拷贝到内存，设置好 PTE 指向物理内存的位置。之后应用程序就可以使用 load 或者 store 指令来修改内存中对应的文件内容。当完成操作之后，会有一个对应的 unmap 系统调用，参数是虚拟地址（VA），长度（len）。来表明应用程序已经完成了对文件的操作，在 unmap 时间点，我们需要将 dirty block 写回到文件中。我们可以很容易的找到哪些 block 是 dirty 的，因为它们在 PTE 中的 dirty bit 为1。</p>
+<p><img src="https://blog-img-acking.oss-cn-beijing.aliyuncs.com/img/image-20220306192814771.png" alt="img"></p>
+<p>当然，在任何聪明的内存管理机制中，所有的这些都是以 lazy 的方式实现。你不会立即将文件内容拷贝到内存中，而是先记录一下这个 PTE 属于这个文件描述符。相应的信息通常在 VMA 结构体中保存，VMA 全称是 <em>Virtual Memory Area</em>。例如对于这里的文件 f，会有一个 VMA，在 VMA 中我们会记录文件描述符，偏移量等等，这些信息用来表示对应的内存虚拟地址的实际内容在哪，这样当我们得到一个位于 VMA 地址范围的 page fault 时，内核可以从磁盘中读数据，并加载到内存中。所以这里回答之前一个问题，dirty bit 是很重要的，因为在 unmap 中，你需要向文件回写dirty block。</p>
+<blockquote>
+<p>学生提问：mmap 的参数中，len 和 flag 是什么意思？</p>
+<p>Frans教授：len 是文件中你想映射到内存中的字节数。prot 是 read&#x2F;write。flags 会在 mmap lab 中出现，我认为它表示了这个区域是私有的还是共享的。如果是共享的，那么这个区域可以在多个进程之间共享。</p>
+<p>学生提问：如果其他进程直接修改了文件的内容，那么是不是意味着修改的内容不会体现在这里的内存中？</p>
+<p>Frans教授：是的。但是如果文件是共享的，那么你应该同步这些变更。我记不太清楚在 mmap 中，文件共享时会发生什么。</p>
+</blockquote>
+<p>你们会在 file system lab 之后做这里相关的 mmap lab，这将会是我们最后一个虚拟内存实验。</p>
+<p>最后来总结一下最近几节课的内容，我们首先详细看了一下 page table 是如何工作的，之后我们详细看了一下 trap 是如何工作的。而 page fault 结合了这两部分的内容，可以用来实现非常强大且优雅的虚拟内存功能。</p>
+<p>我们这节课介绍的内容，只是操作系统里面基于 page fault 功能的子集。一个典型的操作系统实现了今天讨论的所有内容，如果你查看 Linux，它包含了所有的内容，以及许多其他有趣的功能。今天的内容希望能给让你们理解，一旦你可以在 page fault handler 中动态的更新 page table，虚拟内存将会变得有多强大。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/mit6-s081/" rel="tag"># mit6.s081</a>
+              <a href="/tags/OS/" rel="tag"># OS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/en/mit6.s081-ch6/" rel="prev" title="mit6.s081-ch6">
+      <i class="fa fa-chevron-left"></i> mit6.s081-ch6
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/en/mit6.s081-ch5/" rel="next" title="mit6.s081-ch5">
+      mit6.s081-ch5 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#chapter-8-Page-Fault"><span class="nav-number">1.</span> <span class="nav-text">chapter 8 Page Fault</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Page-Fault-basics"><span class="nav-number">1.0.1.</span> <span class="nav-text">Page Fault basics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Lazy-page-allocation"><span class="nav-number">1.0.2.</span> <span class="nav-text">Lazy page allocation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Zero-Fill-On-Demand"><span class="nav-number">1.0.3.</span> <span class="nav-text">Zero Fill On Demand</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Copy-on-Write-Fork"><span class="nav-number">1.0.4.</span> <span class="nav-text">Copy on Write Fork</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Demand-Paging"><span class="nav-number">1.0.5.</span> <span class="nav-text">Demand Paging</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Paging-Files"><span class="nav-number">1.0.6.</span> <span class="nav-text">Memory Paging Files</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Sam Shen"
+      src="/uploads/1.jpg">
+  <p class="site-author-name" itemprop="name">Sam Shen</p>
+  <div class="site-description" itemprop="description">share cs knowledge</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Sam Shen</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
